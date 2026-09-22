@@ -27,7 +27,9 @@ begin
   );
 end $$;
 
--- ── Bloc 3 : rendre l'espace disque (à lancer seul, hors transaction) ──
+-- ── Bloc 3 : rendre l'espace disque — UNE instruction par exécution ──
+-- (le SQL Editor enveloppe plusieurs instructions dans une transaction → erreur 25001)
+-- ✅ Exécutée le 2026-09-22 : BDD 288 Mo → 20 Mo.
 vacuum full cron.job_run_details;
 vacuum full net._http_response;
 

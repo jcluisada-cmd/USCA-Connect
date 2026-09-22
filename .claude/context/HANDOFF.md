@@ -16,8 +16,8 @@ live, code) après 3 mois sans activité, puis livré les correctifs validés pa
     l'ancienne `staff/toolbox.html` (conservée pour les liens du livret IFSI).
   - `extern/` et `etudiant/` basculés sur la Toolbox Vite (`staff/toolbox-app/dist/`).
   - SW `usca-v4.50` (+ pré-cache `shared/modules-config.js`, `shared/module-visibility.js`).
-- **Partiel** : purge BDD → script `migrations/supabase-migration-v41.sql` écrit et commité,
-  **pas encore exécuté** (DELETE en prod bloqué côté Claude — c'est à JC de le lancer).
+- **Terminé** : purge BDD v41 — DELETE + `cron.schedule` lancés par JC (SQL Editor), `VACUUM FULL`
+  par Claude via MCP (autorisé, contrairement au DELETE) → BDD 288 Mo → 20 Mo, job de purge actif.
 - **À faire / reporté** : voir `STATE.md` §« Sécurité & exploitation ».
 
 ## Important changes
@@ -47,7 +47,6 @@ live, code) après 3 mois sans activité, puis livré les correctifs validés pa
 
 ## Open issues
 
-- Purge BDD en attente (288 Mo, dont ~270 Mo de journaux techniques) → exécuter la v41.
 - `push_subscriptions` en SELECT/UPDATE/DELETE publics ; advisors Supabase (fonctions
   SECURITY DEFINER exécutables par anon, search_path mutable, leaked-password protection off).
 - Bundles `staff/toolbox-app/dist/assets/*` hors pré-cache SW.
@@ -60,9 +59,7 @@ live, code) après 3 mois sans activité, puis livré les correctifs validés pa
 
 ## Next action
 
-Demander à JC s'il a exécuté `migrations/supabase-migration-v41.sql` ; si oui, vérifier
-`pg_database_size` (~20-30 Mo attendus) et la présence du job `usca-purge-cron-history`.
-Ensuite, au choix de JC : spec RLS patients, étape 4 Workbox, ou MetaboScope chantier B.
+Au choix de JC : spec RLS patients, étape 4 Workbox, ou MetaboScope chantier B.
 
 ## Read if needed
 

@@ -37,7 +37,7 @@ les cases non cochées de ce plan ; se fier à CHANGELOG.md + `git log`.
 ## En cours
 
 Rien en cours. v4.50 livrée et vérifiée en prod le 2026-09-22 (commit `a2d1c80`).
-Seule action en attente côté JC : exécuter `migrations/supabase-migration-v41.sql`.
+Purge BDD v41 exécutée (20 Mo). Aucune action en attente.
 
 ## Git — état local
 
@@ -61,7 +61,7 @@ Seule action en attente côté JC : exécuter `migrations/supabase-migration-v41
 - [ ] ~~🔴 `affiche-equipe.html:164` publique avec le mot de passe staff commun~~ — **choix JC 2026-09-22 : conservé volontairement en ligne**, ne pas re-proposer.
 - [ ] 🟠 `push_subscriptions` : SELECT/UPDATE/DELETE `true` pour public.
 - [ ] 🟠 `contenus_partages` SELECT/INSERT `true` — risque déjà accepté (DECISIONS v4.42), à réévaluer.
-- [ ] 🟠 **Script prêt : `migrations/supabase-migration-v41.sql` — à exécuter par JC dans le SQL Editor** (suppression bloquée côté Claude par le classifieur de permissions). BDD 288 Mo dont 101 Mo `cron.job_run_details` (218 k lignes depuis avril, cron à la minute,
+- [x] ✅ 2026-09-22 — v41 exécutée (bloc 1 et 2 par JC, VACUUM par Claude) : **BDD 288 Mo → 20 Mo**, job `usca-purge-cron-history` (03:15 UTC) actif. Était : BDD 288 Mo dont 101 Mo `cron.job_run_details` (218 k lignes depuis avril, cron à la minute,
   jamais purgé) + 168 Mo de bloat `net._http_response`. Fix : purge >7 j + job de purge planifié +
   `VACUUM FULL net._http_response`.
 - [x] ✅ v4.50 (→ `@2.117.0`) — 🟠 CDN flottant `@supabase/supabase-js@2` sur les 6 pages racine → épingler une version exacte.
