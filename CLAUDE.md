@@ -1,7 +1,8 @@
 # USCA Connect — Référence projet
 
-> **Version courante** : v4.49 (2026-06-18) — **Tailwind pré-compilé** (étape 3 du chantier de modernisation incrémentale). Le CDN runtime `@tailwindcss/browser@4`, qui recompilait le CSS dans le navigateur à **chaque** chargement, est retiré des **6 pages racine** (`index`, `patient`, `admin`, `extern`, `etudiant`, `pds`) et remplacé par une feuille statique unique `shared/tailwind.css`. Pré-génération : toolchain dev-only racine (`package.json` + `@tailwindcss/cli@4.3.1` **épinglé**, `npm run build:css`), input `tailwind.input.css` (`@import "tailwindcss" source(none)` + `@source` explicites des 6 pages/shared/postcure + `@custom-variant dark` déplacé hors des `<style>` inline). Sur chaque page : `<script CDN>`+`<style inline>` → `<link rel="stylesheet" href="…/shared/tailwind.css">`. CSS ~62 Ko minifié pré-caché par le SW → **fin de la recompilation in-browser**. Sous-apps Vite (`metaboscope/`, `staff/toolbox-app/`) non concernées. Migration page par page (pilote `etudiant`, puis lots), CDN conservé jusqu'à validation. Précédé de **v4.45/v4.44** (Toolbox : dark sans reload + migration Vite). Reste du chantier : **Workbox** (étape 4). Service Worker : `usca-v4.49`.
-> Pour le détail de cette release et des précédentes : voir `CHANGELOG.md` (1 ligne par version) et `CLAUDE_ARCHIVE.md` §B (sessions détaillées).
+> **Version courante** : v4.50 (2026-09-22) — sécurisation `delete-user`, CDN épinglés, extern/étudiant sur Toolbox Vite (SW `usca-v4.50`).
+> Détail de cette release et des précédentes : `CHANGELOG.md` (1 ligne/version), `CLAUDE_ARCHIVE.md` §B (détail).
+> **État actuel, backlog, git** : `.claude/context/STATE.md`. **Décisions passées** : `.claude/context/DECISIONS.md`. **Reprise de session** : `.claude/context/HANDOFF.md`.
 
 ---
 
@@ -45,7 +46,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 | **URL production** | https://usca-connect.pages.dev |
 | **Hébergement** | Cloudflare Pages (auto-deploy sur `git push main`) |
 | **BDD & Auth** | Supabase — pydxfoqxgvbmknzjzecn.supabase.co |
-| **Service Worker** | `usca-v4.49` |
+| **Service Worker** | `usca-v4.50` |
 | **Client Git** | GitHub Desktop |
 | **Chemin local** | `C:\Users\jclui\Documents\USCA-Connect\` |
 | **Mot de passe staff commun** | `usca_c15` |
@@ -64,7 +65,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 
 ### Stack technique
 - HTML5 + Tailwind CSS v4 **pré-compilé** (`shared/tailwind.css`, généré via `@tailwindcss/cli`, `npm run build:css`) — mobile-first. CDN runtime retiré des pages racine (v4.49).
-- Supabase SDK via CDN UMD (`@supabase/supabase-js@2`) — attaché à `window.supabase`
+- Supabase SDK via CDN UMD (`@supabase/supabase-js@2.117.0`, **épinglé** v4.50) — attaché à `window.supabase`
 - jsPDF via CDN — génération PDF côté client
 - React 18 + Babel in-browser (Toolbox V1 uniquement, dans l'iframe)
 - PWA installable (manifest.json + service worker)
@@ -143,72 +144,15 @@ Personnalisation modules : `role_modules_hidden` (P5).
 
 ---
 
-## §6. ÉTAT ACTUEL — APERÇU
+## §6. ÉTAT ACTUEL & BACKLOG
 
-### Login unifié (`index.html`)
-Onglets Patient / Soignant, auto-redirect, mode dev, splash screen, bannière WebView iOS, formatage DDN automatique, messages erreur précis.
-
-### Module Patient — 9 cartes + post-cure
-Programme · Journal · Traitements · Ateliers · Stratégies · Permission · Messages · Mon avis · Demande post-cure. Bouton craving rouge pleine largeur en haut.
-
-### Module Soignant (admin) — 3 onglets
-Dashboard (patients, entrées/sorties, mon élève IFSI, mon externe QCM) · Toolbox (iframe) · Planning (semaine A/B + réunions).
-
-### Module Externe (`extern/`) — 3 onglets
-Dashboard (patients lecture seule + QCM EDN + signalements + questions tuteur) · Toolbox (iframe) · Planning. Mode tuteur via `?preview=tuteur`.
-
-### Module Livret IFSI (`etudiant/`)
-SPA 14 chapitres ~90 questions, lexique 21 acronymes, vue tuteur dans admin, export HTML imprimable.
-
-### Module Post-cure (P8) — 100% local non-HDS
-Volet patient (6 étapes ZIP+PDF email) + volet médecin + 14 structures partagées + accordion "Dossier post-cure" dashboard. Aucune donnée patient sur serveur — seuls flags workflow `patients.postcure_statut`.
-
-### Toolbox V1 — 4 grandes + 5 petites cartes
-Protocoles USCA · Ressources USCA · Fiches Traitements et Substances · Dossier post-cure · Scores · EEG/ECT · Interactions (MetaboScope) · ELSA · Feedback. Dark mode synchronisé (URL param `?theme=`).
-
-> Pour le détail de chaque module (cartes, badges, pop-ups, conventions) : voir `MODULES.md` (sections §2-§7).
+Détail des fonctionnalités livrées, backlog actif (MetaboScope, push, tech debt, features) :
+voir **`.claude/context/STATE.md`**. Détail de chaque module (cartes, badges, pop-ups,
+conventions internes) : voir `MODULES.md`.
 
 ---
 
-## §7. À FAIRE
-
-### Chantier MetaboScope (en cours, prioritaire)
-
-> **Décision 2026-05-08** : `metaboscope/` dans USCA-Connect = **source unique**. Le repo MetaboScope d'origine est figé (à archiver sur GitHub). Toutes les modifs (UI, molécules, audits) se font directement dans `USCA-Connect/metaboscope/`.
-> Roadmap fonctionnelle complète : voir `METABOSCOPE_APP.md`.
-> Procédure technique d'intégration iframe : voir `METABOSCOPE_INTEGRATION.md`.
-
-- [x] **Chantier A — Import docs/audits** (livré 2026-05-08) : `metaboscope/CLAUDE.md`, `metaboscope/SETUP.md`, `metaboscope/data_hug_cbip/`, `metaboscope/docs/audits/`, `metaboscope/docs/superpowers/{specs,plans}/`.
-- [ ] **Phase B — Intégration iframe Toolbox** (P0 — bloquant pour la suite) : appliquer les 2 patches `staff/toolbox.html` (case `"interactions"` → iframe MetaboScope) + `sw.js` (`LOCAL_ASSETS` + bump `v4.24` → `v4.25`) selon `METABOSCOPE_INTEGRATION.md` §2-§3. Test local + commit.
-- [x] **Chantier C — UX & cohérence USCA** (livré v4.29 → v4.33) : sync thème dark/light (v4.26+v4.28+v4.30), refonte 2 onglets remplaçant la HomePage (v4.29), disclaimer pied de page (v4.33). C.3 (liens fiches Toolbox) et C.4 (optim tablette) abandonnés 2026-05-09 — voir `METABOSCOPE_APP.md` §3 pour le détail.
-- [ ] **Chantier B — Couverture v1.1 (451 molécules CBIP×HUG)** (P2, METABOSCOPE_APP.md §2) : ingestion par classe ATC prioritaire (anticoagulants oraux directs, statines, antifongiques azolés, immunosuppresseurs, macrolides ≈ 30 molécules en première vague — couvre ~80% des liaisons ELSA). Arbitrer les 30 conflits puissance discordante avant ingestion (méthode FDA Drug Interaction Table prioritaire). 4-8 sessions Claude estimées.
-- [ ] **Chantier D — Workflow décisionnel** (P2, METABOSCOPE_APP.md §4) : Mode Ordonnance (textarea DCI → rapport HTML imprimable A4), suggestions d'alternatives (sur QT-KR/sérotonine/ACB), calculateurs combinés (score ECG, équivalences BZD/CPZ via lien Toolbox), bookmarks/récents (localStorage anonymisé).
-- [ ] **Chantier E — Couverture addicto avancée** (P3, METABOSCOPE_APP.md §5) : scénarios précâblés (sevrage OH+QT long, TSO+psychotropes, BZD+opioïde, cannabis+chronique), PGx actionnable (saisie génotype CYP2D6/2C19/2B6 → reco CPIC verbatim), veille NPS (flag rouge data >2 ans), annotations cliniques USCA.
-- [ ] **Chantier F — Hygiène technique** (P5, METABOSCOPE_APP.md §6) : décision build (commit `dist/` vs GitHub Action), Service Worker pré-cache bundles hashés (manifest Vite), tests d'intégration `InteractionPage`, audit accessibilité Lighthouse a11y >90, perf bundle <300 KB gzipped, doc reprise `CHANGELOG.md` MetaboScope local.
-- [ ] **6 décisions à trancher avec JC avant exécution** : voir `METABOSCOPE_APP.md` §8 (scope chantier B, format rapport D.1, palette navy vs indigo USCA, build dist/ vs Action, ton suggestions D.2, ordre B vs C).
-
-### Notifications push
-
-- [ ] **V2 médecins — étape suivante** : étendre aux séances de thérapie complémentaire. V2 médecins en cours (voir `SETUP_PUSH.md`). V1 shippée v3.99.
-
-### Tech debt — priorité basse
-
-- [ ] **Planning A/B stocké en BDD** : aujourd'hui dupliqué côté client (`shared/planning-groupes.js`) et en TS dans cron-reminders. Migrer en table Supabase quand un autre module aura besoin du planning côté serveur.
-- [ ] **Silence soignant configurable par profil** : règle "lun-ven 18h + weekend + fériés FR" hardcodée dans `send-push`. Permettre à chaque soignant de régler ses plages (`profiles.push_quiet_hours JSONB`).
-- [ ] **Toolbox — performances & dark mode instantané** : ~500 ms de latence (Babel in-browser + reload toggle). Fix racine : bundler (Vite) + couleurs en variables CSS. Contrevient à la règle §8 "pas de bundler" — à reconsidérer si latence devient gênante.
-
-### Features applicatives
-
-- [ ] **Formulaire pré-admission** — QR code salle d'attente (identité, couverture, substances, scores AUDIT-C/CAST, ATCD, envoi email, 5 min max).
-- [ ] **Annuaire patients** — répertoire post-sortie.
-- [ ] **UI "Mes appareils de confiance"** dans paramètres du compte.
-- [ ] **Livret IFSI — P4** : export PDF du livret rempli à la fin du stage (jsPDF).
-- [ ] **Ressources Toolbox — GitHub Action pour regénérer `index.json`** : aujourd'hui maintenu à la main. Action qui scanne `ressources_doc/{fiches,articles,recos,algos}/` à chaque push.
-- [ ] **Toolbox — Fiches Expert hors antipsychotiques** : enrichir `fiches_expert/` (BZD, TSO, thymorégulateurs, stimulants, antidépresseurs).
-
----
-
-## §8. CONVENTIONS DE DÉVELOPPEMENT
+## §7. CONVENTIONS DE DÉVELOPPEMENT
 
 ### Général
 - **Langue** : français partout (UI, commentaires, données)
@@ -253,7 +197,7 @@ Protocoles USCA · Ressources USCA · Fiches Traitements et Substances · Dossie
 
 ---
 
-## §9. CONTACTS & LIENS
+## §8. CONTACTS & LIENS
 
 | Quoi | Valeur |
 |---|---|
@@ -274,3 +218,6 @@ Protocoles USCA · Ressources USCA · Fiches Traitements et Substances · Dossie
 | `SETUP_PUSH.md` | Setup infrastructure push |
 | `METABOSCOPE_INTEGRATION.md` | Intégration MetaboScope |
 | `METABOSCOPE_README.md` | Vue d'ensemble export MetaboScope |
+| `.claude/context/HANDOFF.md` | Reprendre après un `/clear` ou une nouvelle session |
+| `.claude/context/STATE.md` | État actuel détaillé + backlog complet |
+| `.claude/context/DECISIONS.md` | Avant de reconsidérer un choix déjà tranché |
