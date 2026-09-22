@@ -1,7 +1,7 @@
 # STATE — USCA Connect
 
 > État actuel du projet. Pas un historique — voir `CHANGELOG.md` / `CLAUDE_ARCHIVE.md` pour ça.
-> Dernière vérification : 2026-09-12 (contre CHANGELOG.md, CLAUDE.md, `git log`, grep code réel).
+> Dernière vérification : 2026-09-22 (audit général : prod, BDD Supabase live, code).
 
 ## Version courante
 
@@ -36,19 +36,17 @@ les cases non cochées de ce plan ; se fier à CHANGELOG.md + `git log`.
 
 ## En cours
 
-Rien en cours activement au 2026-09-12 — dernier commit (`a387e2c`) est un alignement de
-plan sur la réalité déjà livrée, pas un chantier ouvert. Voir `HANDOFF.md` pour la
-prochaine action à décider avec JC.
+Rien en cours. v4.50 livrée et vérifiée en prod le 2026-09-22 (commit `a2d1c80`).
+Seule action en attente côté JC : exécuter `migrations/supabase-migration-v41.sql`.
 
 ## Git — état local
 
-- Branche `main`, à jour avec `origin/main`.
-- `.claude/settings.local.json` modifié (non commité) — config locale, pas applicatif.
-- `.claude/launch.json` non suivi (untracked) — config locale Claude Code (preview server), pas applicatif.
-- Pas de changements applicatifs en attente de commit.
-- Note : `.claude/worktrees/` contient des worktrees Git obsolètes (`unruffled-euclid-*`,
-  `unruffled-nobel-*`) avec encore l'ancien CDN Tailwind — vestiges d'anciennes sessions,
-  hors périmètre du repo principal, à nettoyer un jour si gênant (pas fait ici, hors scope).
+- Branche `main`, synchronisée avec `origin/main`.
+- Non commités volontairement (config locale, non applicatif) : `.claude/settings.local.json`,
+  `.claude/launch.json`.
+- `git push`/`fetch` affichent `failed to delete '.git/worktrees/unruffled-euclid-4c2c65':
+  Permission denied` — résidu de worktree verrouillé, sans impact (push OK). Nettoyage :
+  `git worktree prune` après fermeture des processus qui tiennent le dossier.
 
 ## À FAIRE (backlog actif)
 

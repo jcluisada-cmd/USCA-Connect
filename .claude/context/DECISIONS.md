@@ -78,3 +78,19 @@ commit sain. **Fix qui marche** : cache-bust trivial du contenu (commentaire ajo
 forcer un ré-upload avec un nouveau hash — pas une resuppression, pas un rollback API seul.
 **Règle** : ne jamais supprimer un déploiement "In progress" dans le dashboard CF, même en
 cas d'anomalie apparente ; attendre qu'il échoue ou termine naturellement.
+
+## Audit sécurité 2026-09-22 — arbitrages de JC
+
+- **Mot de passe staff commun sur `affiche-equipe.html` (publique en ligne) : conservé
+  volontairement.** Ne pas re-proposer son retrait.
+- **RLS `patients_select_all` / `substances_patient_select_all` (lecture publique via clé anon) :
+  correction reportée** — JC veut d'abord mesurer les implications sur la connexion patient.
+  ⚠️ Nuance la décision « Auth patient faible acceptée » ci-dessus : ses prémisses (a) réseau
+  fermé et (c) aucune donnée sensible exposée **ne tiennent pas** tant que la table `patients`
+  (chambre + DDN = identifiants de connexion, substance) est lisible depuis Internet avec la clé
+  anon publique. Piste de correctif : RPC `verify_patient(chambre, ddn)` SECURITY DEFINER +
+  SELECT de la table réservé à `authenticated` — à spécifier avant exécution (impact sur
+  `shared/auth.js` et les lectures patient côté `patient/`).
+- **Purge BDD (`migrations/supabase-migration-v41.sql`) : à exécuter par JC** dans le SQL Editor.
+  Claude ne peut pas lancer de DELETE de masse sur la BDD de prod (bloqué par le classifieur de
+  permissions auto mode) — ne pas tenter de contournement.
