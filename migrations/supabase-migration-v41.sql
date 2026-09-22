@@ -16,11 +16,16 @@
 delete from cron.job_run_details where start_time < now() - interval '7 days';
 
 -- ── Bloc 2 : job quotidien de purge (03:15 UTC) — évite la re-croissance ─
-select cron.schedule(
-  'usca-purge-cron-history',
-  '15 3 * * *',
-  $$delete from cron.job_run_details where start_time < now() - interval '7 days'$$
-);
+-- Bloc DO (pas un SELECT) : le SQL Editor Supabase ajoute « limit 100 » aux SELECT,
+-- ce qui cassait `select cron.schedule(...)` (erreur 42601 near "limit").
+do $$
+begin
+  perform cron.schedule(
+    'usca-purge-cron-history',
+    '15 3 * * *',
+    $job$delete from cron.job_run_details where start_time < now() - interval '7 days'$job$
+  );
+end $$;
 
 -- ── Bloc 3 : rendre l'espace disque (à lancer seul, hors transaction) ──
 vacuum full cron.job_run_details;
