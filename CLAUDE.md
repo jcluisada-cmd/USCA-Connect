@@ -42,7 +42,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 
 | Élément | Valeur |
 |---|---|
-| **Repo GitHub** | https://github.com/jcluisada-cmd/USCA-Assistant |
+| **Repo GitHub** | https://github.com/jcluisada-cmd/USCA-Connect |
 | **URL production** | https://usca-connect.pages.dev |
 | **Hébergement** | Cloudflare Pages (auto-deploy sur `git push main`) |
 | **BDD & Auth** | Supabase — pydxfoqxgvbmknzjzecn.supabase.co |
@@ -64,10 +64,10 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 > La Toolbox V1 intégrée en iframe conserve sa palette navy/teal existante.
 
 ### Stack technique
-- HTML5 + Tailwind CSS v4 **pré-compilé** (`shared/tailwind.css`, généré via `@tailwindcss/cli`, `npm run build:css`) — mobile-first. CDN runtime retiré des pages racine (v4.49).
+- HTML5 + Tailwind CSS v4 **pré-compilé** (`shared/tailwind.css`, généré via `@tailwindcss/cli`, `npm run build:css`) — mobile-first.
 - Supabase SDK via CDN UMD (`@supabase/supabase-js@2.117.0`, **épinglé** v4.50) — attaché à `window.supabase`
 - jsPDF via CDN — génération PDF côté client
-- React 18 + Babel in-browser (Toolbox V1 uniquement, dans l'iframe)
+- React 18 bundlé par Vite pour la Toolbox V1 (`staff/toolbox-app/`, `dist/` servi en iframe). L'ancienne `staff/toolbox.html` (Babel in-browser) n'est conservée que pour les liens `lien_toolbox` du livret IFSI
 - PWA installable (manifest.json + service worker)
 - **Pas de bundler pour les pages** (HTML + CDN Supabase SDK / jsPDF) — mais une **toolchain npm dev-only à la racine** pré-compile le CSS Tailwind (`npm run build:css` → `shared/tailwind.css`, à committer). Sous-apps Vite : `metaboscope/`, `staff/toolbox-app/` (voir `METABOSCOPE_INTEGRATION.md`)
 
@@ -88,17 +88,18 @@ USCA-Connect/
 ├── etudiant/index.html         ← SPA livret IFSI
 ├── extern/index.html           ← Dashboard externe (3 onglets)
 ├── pds/index.html              ← Dashboard Poste de Soins infirmier (v4.39)
-├── staff/toolbox.html          ← V1 Toolbox React (iframe dans admin)
+├── staff/toolbox-app/         ← Toolbox V1 (sous-app Vite, `dist/` en iframe dans admin/extern/etudiant)
+├── staff/toolbox.html          ← Ancienne Toolbox Babel (conservée pour les liens du livret IFSI)
 ├── data/                       ← Base QCM EDN (lazy-loaded)
 ├── postcure/                   ← Module post-cure (volets séparés)
 ├── shared/                     ← Modules JS partagés (supabase, auth, planning, fiches, etc.)
 ├── functions/api/delete-user.js ← Cloudflare Function proxy suppression compte
-├── fiches-traitements/         ← 29 fiches patient + 8 fiches expert PDFs
+├── fiches-traitements/         ← 30 fiches patient HTML + 8 fiches expert (HTML + PDF)
 ├── fiches-substances/          ← 16 fiches HTML d'information substances
 ├── ressources_doc/             ← Ressources Toolbox manifest-driven (index.json)
 ├── eeg_ect/                    ← Fiches EEG/ECT (1 Pratique ECT + 7 handbook + assets/)
-├── metaboscope/                ← (Sous-app React/Vite, intégration en cours)
-├── migrations/                 ← Scripts SQL (v1 à v36)
+├── metaboscope/                ← Sous-app React/Vite, `dist/` servi en iframe dans la Toolbox
+├── migrations/                 ← Scripts SQL `supabase-migration-vN.sql` (v1 à v41)
 ├── assets/                     ← Images sources
 ├── manifest.json               ← Manifeste PWA
 └── sw.js                       ← Service Worker multi-pages
@@ -140,7 +141,7 @@ Tables livret IFSI : `etudiants_stages`, `etudiant_progression`.
 
 Personnalisation modules : `role_modules_hidden` (P5).
 
-> Pour les schémas détaillés, RLS, et l'historique des migrations v1-v36 : voir `DB_SCHEMA.md`.
+> Pour les schémas détaillés, RLS, et l'historique des migrations : voir `DB_SCHEMA.md`.
 
 ---
 
@@ -162,11 +163,9 @@ conventions internes) : voir `MODULES.md`.
 - Client Git : GitHub Desktop
 
 ### Modifications
-1. Lire le fichier avec Read
-2. Modifier chirurgicalement avec Edit (pas de réécriture complète)
-3. Incrémenter `CACHE_NAME` dans `sw.js` à chaque modif
-4. **Faire un commit** et dire **"Push !"** quand c'est prêt
-5. Push via GitHub Desktop → Cloudflare Pages redéploie (~30 sec)
+1. Incrémenter `CACHE_NAME` dans `sw.js` à chaque modif
+2. **Faire un commit** et dire **"Push !"** quand c'est prêt
+3. Push via GitHub Desktop → Cloudflare Pages redéploie (~30 sec)
 
 ### Règles absolues
 - ❌ Ne jamais réécrire un fichier en entier
@@ -184,7 +183,7 @@ conventions internes) : voir `MODULES.md`.
 | iframe V1 sur iOS Safari (scroll, hauteur) | `-webkit-overflow-scrolling: touch`, hauteur explicite, `?embedded=true` |
 | Reconnexion Realtime (téléphone verrouillé) | Auto-reconnexion Supabase + refresh sur `visibilitychange` |
 | Auth patient faible (chambre+DDN) | Rate-limiting client (3 tentatives → 5 min), données limitées, réseau hospitalier |
-| CDN tiers (Supabase, jsPDF, fonts) | Cachés par SW après 1er chargement ; Tailwind désormais pré-compilé en local (v4.49), plus servi par CDN |
+| CDN tiers (Supabase, jsPDF, fonts) | Cachés par SW après 1er chargement (Tailwind est servi en local : `shared/tailwind.css`) |
 
 ### Contenu clinique — sources de vérité (par priorité)
 1. **Référentiel USCA 2.2** et addendum (documents internes)
@@ -201,7 +200,7 @@ conventions internes) : voir `MODULES.md`.
 
 | Quoi | Valeur |
 |---|---|
-| Repo GitHub | https://github.com/jcluisada-cmd/USCA-Assistant |
+| Repo GitHub | https://github.com/jcluisada-cmd/USCA-Connect |
 | Production | https://usca-connect.pages.dev |
 | Email | jc.luisada@gmail.com |
 | Supabase | pydxfoqxgvbmknzjzecn.supabase.co |
@@ -217,7 +216,6 @@ conventions internes) : voir `MODULES.md`.
 | `DB_SCHEMA.md` | Schéma BDD, RLS, migrations |
 | `SETUP_PUSH.md` | Setup infrastructure push |
 | `METABOSCOPE_INTEGRATION.md` | Intégration MetaboScope |
-| `METABOSCOPE_README.md` | Vue d'ensemble export MetaboScope |
 | `.claude/context/HANDOFF.md` | Reprendre après un `/clear` ou une nouvelle session |
 | `.claude/context/STATE.md` | État actuel détaillé + backlog complet |
 | `.claude/context/DECISIONS.md` | Avant de reconsidérer un choix déjà tranché |
