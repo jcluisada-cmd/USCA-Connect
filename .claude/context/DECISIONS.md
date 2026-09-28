@@ -94,3 +94,16 @@ cas d'anomalie apparente ; attendre qu'il échoue ou termine naturellement.
 - **Purge BDD (`migrations/supabase-migration-v41.sql`) : à exécuter par JC** dans le SQL Editor.
   Claude ne peut pas lancer de DELETE de masse sur la BDD de prod (bloqué par le classifieur de
   permissions auto mode) — ne pas tenter de contournement.
+
+## Sessions parallèles & versions (2026-09-28)
+
+- **Push direct sur `main` plutôt que PR** pour les correctifs testés (JC, 2026-09-28) : développeur
+  unique, la PR n'apporterait qu'un aperçu CF Pages. Le plan `2026-09-28-toolbox-qcm-fixes.md` disait
+  « une PR par lot » — supplanté. PR encore utile pour un changement risqué à prévisualiser.
+- **Numéro de version = attribué au moment de la fusion sur `main`, pas au démarrage de la session.**
+  Le 2026-09-28, trois sessions parallèles ont chacune pris « v4.51/v4.52 » → collisions à chaque rebase.
+  Avant de pousser : `git fetch`, lire l'en-tête `CHANGELOG.md` de `origin/main`, prendre le suivant.
+  Rebase = conflits attendus seulement sur `CHANGELOG.md`, `CLAUDE.md` (l.3 et ligne SW), `sw.js` l.1 :
+  garder les entrées de `main`, insérer la sienne au-dessus.
+- **Lectures `QCMEngine.getMy*` filtrent explicitement `user_id`** (v4.53) : la RLS v18 ouvre aux
+  médecins les données QCM des externes, donc la RLS seule ne suffit pas pour « mes » données en mode tuteur.

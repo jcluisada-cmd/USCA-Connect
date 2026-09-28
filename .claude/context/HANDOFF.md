@@ -1,71 +1,78 @@
 # HANDOFF — USCA Connect
 
 > Point d'entrée pour reprendre le travail. Lire ce fichier en premier, avant `STATE.md` /
-> `DECISIONS.md`. Mis à jour au 2026-09-22 (audit général + v4.50).
+> `DECISIONS.md`. Mis à jour au 2026-09-28 (checkpoint consolidé de toutes les sessions du jour,
+> avant archivage des sessions).
 
 ## Current objective
 
-Aucun chantier ouvert. La session du 2026-09-22 a fait un audit général (prod, BDD Supabase
-live, code) après 3 mois sans activité, puis livré les correctifs validés par JC (v4.50).
+Pas de tâche en vol. La journée du 2026-09-28 a traité l'audit externe (faille `profiles`, Toolbox,
+QCM externe). Un seul chantier est **fini mais non fusionné** : création des comptes soignants
+côté serveur (branche `claude/wonderful-colden-130189`).
 
 ## Current state
 
-- **Terminé (v4.50, commit `a2d1c80`, poussé, vérifié en prod)** :
-  - `functions/api/delete-user.js` sécurisé (JWT validé + `is_admin` exigé + userId UUID).
-  - `@supabase/supabase-js` épinglé `@2.117.0` (6 pages) ; react/react-dom `@18.3.1` dans
-    l'ancienne `staff/toolbox.html` (conservée pour les liens du livret IFSI).
-  - `extern/` et `etudiant/` basculés sur la Toolbox Vite (`staff/toolbox-app/dist/`).
-  - SW `usca-v4.50` (+ pré-cache `shared/modules-config.js`, `shared/module-visibility.js`).
-- **Terminé** : purge BDD v41 — DELETE + `cron.schedule` lancés par JC (SQL Editor), `VACUUM FULL`
-  par Claude via MCP (autorisé, contrairement au DELETE) → BDD 288 Mo → 20 Mo, job de purge actif.
-- **À faire / reporté** : voir `STATE.md` §« Sécurité & exploitation ».
+- **Sur `main` et en prod** (`19b3618`, SW `usca-v4.53`) :
+  - v4.51 — faille `profiles` + bouton ↺ externe ; migration v42 **exécutée** (vérifié en BDD live 2026-09-28).
+  - v4.52 — Toolbox Vite : liens internes en chemins absolus (lot A du plan).
+  - PR #3 — faits périmés corrigés dans les fichiers d'instructions Claude.
+  - v4.53 — 4 bugs QCM externe (lot B) : reprise d'une session complète, bouton Suivant à double action,
+    carte « Signalements QCM » ajoutée, filtre `user_id` dans `QCMEngine.getMy*`.
+- **Fini, non fusionné** : création de comptes côté serveur (`0f35156`, branche poussée). Numérotée « v4.52 »
+  par erreur → à renuméroter v4.54. Migration v43 **non exécutée**.
+- **À faire** : lot C du plan (contenu QCM EDN, validation clinique JC) ; backlog dans `STATE.md`.
 
-## Important changes
+## Important changes (2026-09-28, sur main)
 
-`functions/api/delete-user.js`, `index.html`, `patient/index.html`, `admin/index.html`,
-`extern/index.html`, `etudiant/index.html`, `pds/index.html`, `staff/toolbox.html`, `sw.js`,
-`migrations/supabase-migration-v41.sql`, `CHANGELOG.md`, `CLAUDE.md`, `.claude/context/*`.
+`extern/index.html`, `shared/qcm-engine.js`, `admin/index.html`, `shared/supabase.js`,
+`staff/toolbox-app/src/App.jsx` + `dist/`, `migrations/supabase-migration-v42.sql`, `sw.js`,
+`CHANGELOG.md`, `CLAUDE.md`, `MODULES.md`, `DB_SCHEMA.md`, `.claude/settings.json`, `.claude/context/*`,
+`docs/superpowers/plans/2026-09-28-toolbox-qcm-fixes.md`.
 
 ## Decisions needed to continue
 
-- RLS `patients` / `substances_patient` lisibles en anon : **reporté par JC** — il faut d'abord
-  une spec mesurant l'impact sur la connexion patient (voir `DECISIONS.md` §Audit 2026-09-22).
-- Mot de passe sur `affiche-equipe.html` : **conservé par choix de JC**, ne pas re-proposer.
+- **Fusionner la branche « comptes côté serveur »** (JC) — puis, dans l'ordre : déployer, tester une création
+  de compte depuis admin/, exécuter `migrations/supabase-migration-v43.sql`, désactiver « Allow new users to
+  sign up » (Supabase → Auth).
+- **Rôles du mode tuteur** (`extern/index.html` ~l.789) : restreindre à médecin/admin ou corriger la doc.
+- **Lot C QCM** : valider chaque correction clinique proposée dans le plan avant application.
+- Toujours en attente (2026-09-22) : RLS `patients` lisible en anon — spec d'impact d'abord.
 
 ## Verification
 
-- Prod après déploiement : `sw.js` = `usca-v4.50` ; `POST /api/delete-user` → 401 (faux jeton),
-  401 (sans header), 400 (userId non UUID) ; pages servent `supabase-js@2.117.0` ;
-  extern/étudiant/admin référencent `toolbox-app/dist/index.html`.
-- Preview locale : Toolbox Vite rendue OK en `?embedded=true` (⚠️ avec `npx serve`, utiliser
-  l'URL `/staff/toolbox-app/dist/` avec slash final — sinon 404 sur `assets/`, artefact local
-  uniquement ; Cloudflare redirige correctement).
-- **Non testé** : chemin positif de `delete-user` (suppression réelle par un admin) — nécessite
-  une session admin. À valider par JC en supprimant un compte de test depuis admin/.
-- v4.52 : liens `../` de la Toolbox Vite passés en absolus (fiches/ressources/EEG/MetaboScope en 404
-  depuis v4.44 admin, v4.50 extern). Vérifié Playwright sur `/staff/toolbox-app/dist/index.html?embedded=true`
-  (0 réponse ≥ 400). **Reste à valider par JC** : onglet Toolbox dans admin/ et extern/ avec une vraie session.
-- Backend sain : cron `usca-push-reminders` chaque minute, 0 échec/7 j, appels push en 200.
+- v4.53 : `node --check` OK ; Playwright avec Supabase simulé (stubs de `shared/supabase.js`/`auth.js`
+  servis par `page.route`) → 4 scénarios OK sur le nouveau code, les 4 bugs reproduits sur l'ancien.
+  **Non testé avec une vraie session externe** : lancer une session, répondre à la dernière question,
+  fermer par ✕, reprendre → le score doit s'afficher directement.
+- v4.52 : Playwright statique, 0 réponse ≥ 400 ; **reste à valider par JC** : onglet Toolbox dans admin/ et extern/.
+- v4.51 : testé sur Postgres local (15 scénarios) ; policies/trigger/RPC présents en BDD live.
+- `origin/main` = `main` local (dépôt principal avancé en fast-forward) ; worktrees propres.
 
 ## Open issues
 
-- `push_subscriptions` en SELECT/UPDATE/DELETE publics ; advisors Supabase (fonctions
-  SECURITY DEFINER exécutables par anon, search_path mutable, leaked-password protection off).
+- `push_subscriptions` publics ; advisors Supabase (SECURITY DEFINER exécutables par anon, search_path,
+  leaked-password protection off).
 - Bundles `staff/toolbox-app/dist/assets/*` hors pré-cache SW.
-- Résidu `.git/worktrees/unruffled-euclid-4c2c65` verrouillé (warning bénin au push).
+- Warning `failed to delete .git/worktrees/unruffled-euclid-4c2c65` à chaque fetch/push (bénin) →
+  `git worktree prune` une fois les sessions fermées.
+- Branches distantes obsolètes supprimables : `claude/compassionate-keller-ucoalh` (= PR #3), `cf-bisect`,
+  `cloudflare/workers-autoconfig`. **Ne pas supprimer** `claude/wonderful-colden-130189`.
 
 ## Important failed attempts
 
-- `execute_sql` avec `DELETE FROM cron.job_run_details` / `cron.schedule` → refusé par le
-  classifieur de permissions (« mass delete »). Ne pas retenter : passer par JC + v41.
+- Test Playwright de `extern/` : un Service Worker enregistré au 1er chargement sert les vrais scripts
+  et contourne `page.route` → désinscrire le SW + vider `caches` avant, et `route('**/sw.js', abort)`.
+- Résolution de conflit de rebase refusée une fois par le classifieur de permissions (« ressources
+  partagées ») tant que JC n'avait pas autorisé explicitement le rebase sur `main`.
 
 ## Next action
 
-Au choix de JC : spec RLS patients, étape 4 Workbox, ou MetaboScope chantier B.
+Rebaser `claude/wonderful-colden-130189` sur `main`, renuméroter en v4.54 (CHANGELOG, CLAUDE.md, `sw.js`),
+`node --check`, pousser sur `main`, puis faire tester une création de compte à JC avant la migration v43.
 
 ## Read if needed
 
-- `STATE.md` — backlog complet + constats de l'audit.
-- `DECISIONS.md` — arbitrages de l'audit 2026-09-22 (affiche, RLS patients, purge).
-- `CHANGELOG.md` §v4.50.
-- `SETUP_PUSH.md` — si travail sur les notifications / cron.
+- `STATE.md` — backlog complet et état des branches.
+- `DECISIONS.md` §« Sessions parallèles & versions (2026-09-28) ».
+- `docs/superpowers/plans/2026-09-28-toolbox-qcm-fixes.md` — lot C.
+- `CHANGELOG.md` §v4.51 à v4.53 ; `git show 0f35156` pour la branche comptes.

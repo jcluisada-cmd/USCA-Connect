@@ -1,11 +1,15 @@
 # STATE — USCA Connect
 
 > État actuel du projet. Pas un historique — voir `CHANGELOG.md` / `CLAUDE_ARCHIVE.md` pour ça.
-> Dernière vérification : 2026-09-22 (audit général : prod, BDD Supabase live, code).
+> Dernière vérification : 2026-09-28 (checkpoint consolidé des sessions du jour : git, branches, BDD live).
 
 ## Version courante
 
-**v4.50** (2026-09-22) — sécurisation `delete-user`, CDN Supabase/React épinglés, extern/étudiant sur Toolbox Vite, SW `usca-v4.50`. Précédée de **v4.49** (2026-06-18) — Tailwind pré-compilé (`shared/tailwind.css` via `@tailwindcss/cli@4.3.1`, `npm run build:css`), plus aucun CDN Tailwind runtime dans les pages racine.
+**v4.53** (2026-09-28, commit `19b3618`, SW `usca-v4.53`) — 4 bugs QCM du module Externe (lot B du plan
+`docs/superpowers/plans/2026-09-28-toolbox-qcm-fixes.md`). Journée du 2026-09-28 sur `main` :
+**v4.51** faille `profiles` (auto-promotion admin) + bouton ↺ externe (migration **v42 exécutée**, vérifié en BDD live) ;
+**v4.52** liens Toolbox Vite en chemins absolus (lot A) ; PR #3 correction des fichiers d'instructions Claude ;
+**v4.53** bugs QCM externe (lot B). Base antérieure : v4.50 (2026-09-22, `delete-user` sécurisé, CDN épinglés).
 
 Le plan `docs/superpowers/plans/2026-06-18-tailwind-precompile.md` est **clos** malgré ses cases non cochées : se fier à `CHANGELOG.md` et `git log`. Ignorer `.claude/worktrees/*` (worktrees obsolètes, hors périmètre).
 
@@ -24,12 +28,26 @@ Le plan `docs/superpowers/plans/2026-06-18-tailwind-precompile.md` est **clos** 
 
 ## En cours
 
-Rien en cours. v4.50 livrée et vérifiée en prod le 2026-09-22 (commit `a2d1c80`).
-Purge BDD v41 exécutée (20 Mo). Aucune action en attente.
+- ⚠️ **Création des comptes soignants côté serveur — fini mais NON fusionné.** Branche
+  `claude/wonderful-colden-130189` (poussée sur origin), commit `0f35156`, numérotée « v4.52 » alors que
+  v4.52 est déjà prise sur `main` (Toolbox) → à rebaser sur `main` et renuméroter **v4.54** (SW `usca-v4.54`).
+  Contenu : `functions/api/create-user.js` (JWT + `is_admin` vérifiés, API admin Supabase, rollback),
+  `auth.createStaff()` remplace `registerStaff` (`shared/auth.js`, `admin/index.html`),
+  `migrations/supabase-migration-v43.sql` (supprime `profiles_insert_self`) — **v43 NON exécutée**
+  (policy encore présente en BDD le 2026-09-28) ; ordre : déployer la v4.54, tester une création de compte, PUIS v43,
+  PUIS désactiver « Allow new users to sign up » dans Supabase Auth (voir `DB_SCHEMA.md` sur la branche).
+- **Plan `2026-09-28-toolbox-qcm-fixes.md`** : lot A ✅ (v4.52), lot B ✅ (v4.53), **lot C (contenu QCM
+  EDN) à faire** — corrections factuelles/actualisations/re-mélange des options, **validation clinique JC
+  requise avant commit** (générer un diff lisible avant/après).
 
 ## Git — état local
 
-- Branche `main`, synchronisée avec `origin/main`.
+- Branche `main`, synchronisée avec `origin/main` (`19b3618`) ; dépôt principal avancé en fast-forward le 2026-09-28.
+- Branches distantes non fusionnées : `claude/wonderful-colden-130189` (voir « En cours », **à garder**) ;
+  `claude/compassionate-keller-ucoalh` (= PR #3, déjà intégrée, supprimable) ; `cf-bisect` (incident
+  CF 2026-05-22) et `cloudflare/workers-autoconfig` (2026-04) — obsolètes, supprimables.
+- Worktrees locaux `recursing-nobel-44d482` (détaché, = v4.52 fusionnée), `wonderful-colden-130189` (sa branche est poussée),
+  `vigorous-almeida-b6f5e3` (= main) : tous propres, rien de non poussé → archivables.
 - Non commités volontairement (config locale, non applicatif) : `.claude/settings.local.json`,
   `.claude/launch.json`.
 - `git push`/`fetch` affichent `failed to delete '.git/worktrees/unruffled-euclid-4c2c65':
@@ -47,6 +65,10 @@ Purge BDD v41 exécutée (20 Mo). Aucune action en attente.
   y compris le couple chambre + DDN = identifiants de connexion patient. Fix : RPC `verify_patient`
   SECURITY DEFINER, SELECT table réservé à `authenticated`. Idem `substances_patient_select_all`.
 - [ ] ~~🔴 `affiche-equipe.html:164` publique avec le mot de passe staff commun~~ — **choix JC 2026-09-22 : conservé volontairement en ligne**, ne pas re-proposer.
+- [x] ✅ v4.51 + v42 exécutée — 🔴 `profiles` : tout compte connecté pouvait modifier `role`/`is_admin` de n'importe quel profil.
+- [ ] 🔴 Fermer l'INSERT client sur `profiles` + inscription publique : branche `wonderful-colden` (v4.54) + v43 — voir « En cours ».
+- [ ] 🟡 Mode tuteur `extern/?preview=tuteur` (`extern/index.html` ~l.789) accepte ide/pharmacien/psychologue/secrétaire,
+  la doc dit « médecin/admin » → **décision JC** : restreindre le code ou corriger la doc.
 - [ ] 🟠 `push_subscriptions` : SELECT/UPDATE/DELETE `true` pour public.
 - [ ] 🟠 `contenus_partages` SELECT/INSERT `true` — risque déjà accepté (DECISIONS v4.42), à réévaluer.
 - [x] ✅ 2026-09-22 — v41 exécutée (bloc 1 et 2 par JC, VACUUM par Claude) : **BDD 288 Mo → 20 Mo**, job `usca-purge-cron-history` (03:15 UTC) actif. Était : BDD 288 Mo dont 101 Mo `cron.job_run_details` (218 k lignes depuis avril, cron à la minute,
