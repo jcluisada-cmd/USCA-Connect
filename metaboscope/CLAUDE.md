@@ -8,22 +8,15 @@
 
 ---
 
-## 0. Démarrage de session — à lire dans cet ordre
+## 0. Fichiers de référence — à lire selon la tâche
 
-À chaque ouverture de session Claude Code dans ce repo, **lire ces fichiers dans l'ordre suivant** avant toute action :
-
-1. **`CLAUDE.md`** *(ce fichier)* — identité du projet, stack, règles qualité, état d'avancement, reprise.
-2. **`docs/superpowers/specs/2026-04-27-metaboscope-modules-design.md`** — spec v1 validé (architecture, 3 modules, multi-sources). **À lire avant le plan.**
-3. **`docs/superpowers/plans/2026-04-27-metaboscope-modules.md`** — plan d'implémentation 22 tâches sur 7 sessions, prêt à exécuter.
-4. **`DATA_SCHEMA.md`** — schéma JSON v2 normatif des molécules (obligatoire avant toute modif de données).
-5. **`INSTRUCTIONS_PROJET_METABOSCOPE.md`** — contexte clinique étendu, cibles utilisateur, hiérarchie des sources, méthodologie de production des JSON. Lecture recommandée pour toute session "données" ou "ajout molécule".
-6. **`src/data/warnings.md`** — **avertissements et points notables sur les données** : couples CI absolues (§1), codes hors vocabulaire à normaliser v1.0.1 (§2), zones grises (§3), sources uniques à cross-valider (§4), récap PGx CPIC (§5), récap QT (§6), notes par fichier (§7), champs manquants (§8), actions de maintenance (§9). À consulter pour toute question clinique fine ou avant une décision sur les données.
-7. **`SETUP.md`** — référence de scaffolding initial (déjà appliqué). À consulter si on doit re-scaffolder ou reproduire la config sur un autre poste.
-8. **JSON molécules concernés** dans `src/data/molecules/` — *avant* toute réponse sur une molécule précise.
+- **Avant toute modification de données** : `DATA_SCHEMA.md` (schéma JSON v2 normatif), puis le JSON concerné dans `src/data/molecules/`.
+- **Avant toute réponse sur une molécule précise** : son JSON dans `src/data/molecules/`.
+- **Question clinique fine ou décision sur les données** : `src/data/warnings.md` — couples CI absolues (§1), codes hors vocabulaire (§2), zones grises (§3), sources uniques à cross-valider (§4), PGx CPIC (§5), QT (§6), notes par fichier (§7), champs manquants (§8), maintenance (§9).
+- **Session « données » ou ajout de molécule** : `INSTRUCTIONS_PROJET_METABOSCOPE.md` — contexte clinique, cibles utilisateur, hiérarchie des sources, méthodologie de production des JSON.
+- **Conception v1 (référence historique)** : `docs/superpowers/specs/2026-04-27-metaboscope-modules-design.md`. `SETUP.md` seulement pour re-scaffolder.
 
 > Règle : ne **jamais** modifier `src/data/molecules/*.json` sans `git diff` préalable et validation contre le schéma.
-
-> **Reprise rapide** : si le but est d'attaquer l'implémentation, sauter directement à §16 ci-dessous.
 
 ---
 
@@ -31,7 +24,7 @@
 
 PWA d'aide à la décision clinique sur la métabolisation médicamenteuse, pour pharmacologues cliniciens et addictologues AP-HP (USCA / ELSA, Pitié-Salpêtrière). Aucun référentiel français n'intègre : psychotropes + voies non-CYP + drogues/NPS + PGx CPIC actionnable + alertes PD (QT/séro/resp/ACB). Le tableau HUG Genève 2020 est la référence de service à dépasser.
 
-**Porteur unique : JC** (psychiatre addictologue, AP-HP). Poste verrouillé Windows 11, pas de droits admin. Git Portable + Claude Code. Repo : `C:\Users\4070521\Documents\MetaboScope` (hors OneDrive). Remote : `https://github.com/jcluisada-cmd/MetaboScope.git`.
+**Porteur unique : JC** (psychiatre addictologue, AP-HP). Poste verrouillé Windows 11, pas de droits admin. Source unique : `metaboscope/` dans le repo USCA-Connect (le repo `jcluisada-cmd/MetaboScope` d'origine est figé — ne plus y committer).
 
 ---
 
@@ -39,7 +32,7 @@ PWA d'aide à la décision clinique sur la métabolisation médicamenteuse, pour
 
 ```
 React 18 + Vite 5 + TypeScript + Tailwind CSS 3
-PWA  : service worker + manifest (Workbox via vite-plugin-pwa)
+PWA  : désactivée dans cette variante iframe (vite-plugin-pwa non inclus, cf. vite.config.ts) — pré-cache assuré par le sw.js d'USCA-Connect
 Routing : react-router-dom v6
 Stockage offline : Dexie.js (IndexedDB) — base pour cache utilisateur futur
 Tests : Vitest + Testing Library (jsdom)
@@ -70,7 +63,7 @@ Custom dans `tailwind.config.ts` : `navy.*`, `teal.*` étendus. `amber/red/gray`
 
 ---
 
-## 4. Structure du projet (état 2026-04-27)
+## 4. Structure du projet
 
 ```
 MetaboScope/
@@ -83,20 +76,15 @@ MetaboScope/
 ├── public/
 │   ├── favicon.svg
 │   ├── icons/icon.svg            ← icône PWA (SVG, scalable, "any maskable")
-│   └── _redirects                ← Netlify SPA fallback
+│   └── _redirects                ← SPA fallback (Cloudflare Pages)
 ├── src/
 │   ├── main.tsx                  ← entry React + BrowserRouter
-│   ├── App.tsx                   ← routes / /interactions /substances
+│   ├── App.tsx                   ← routes `/` (Atlas) et `/interactions` ; `/search*` et `/atlas` redirigent
 │   ├── index.css                 ← Tailwind layers + scrollbar custom + .focus-ring
 │   ├── vite-env.d.ts
 │   ├── data/
 │   │   ├── index.ts              ← agrège les 5 JSON, expose ALL_MOLECULES, MOLECULES_BY_ID, CLASSES, SUBSTANCES, searchMolecules()
-│   │   └── molecules/            ← 5 JSON consolidés (NE PAS MODIFIER sans git diff)
-│   │       ├── molecules_opioides_tso.json                    ✅ 18 mol.
-│   │       ├── molecules_antidepresseurs.json                  ✅ 14 mol.
-│   │       ├── molecules_antipsychotiques.json                 ✅ 18 mol.
-│   │       ├── molecules_thymoregulateurs_anticonvulsivants.json ✅ 13 mol.
-│   │       └── molecules_bzd_hypnotiques.json                  ✅ session 5
+│   │   └── molecules/            ← 13 JSON consolidés, cf. §8 (NE PAS MODIFIER sans git diff)
 │   ├── types/
 │   │   └── molecule.ts           ← interfaces TS du schéma v2 (variants string|array tolérés)
 │   ├── utils/
@@ -107,11 +95,8 @@ MetaboScope/
 │   │   ├── Disclaimer.tsx        ← disclaimer clinique (DISCLAIMER_TEXT exporté)
 │   │   └── OfflineBanner.tsx     ← bandeau si !navigator.onLine
 │   └── pages/
-│       ├── HomePage.tsx          ← landing + nav modules + statut
-│       ├── InteractionPage.tsx   ← Module 2 — panier + 5 cartes PD + paires PK + PGx (T18)
-│       ├── MoleculePage.tsx      ← fiche détaillée /search/:id (T16)
-│       ├── SearchPage.tsx        ← recherche unifiée /search (T15)
-│       └── AtlasPage.tsx         ← Atlas /atlas — sous-onglets CYP/UGT/Transporteurs (T19)
+│       ├── AtlasPage.tsx         ← Atlas (route `/`) — sous-onglets CYP/UGT/Transporteurs
+│       └── InteractionPage.tsx   ← Module 2 — panier + 5 cartes PD + paires PK + PGx
 └── tests/
     └── setup.ts                  ← @testing-library/jest-dom
 ```
@@ -125,7 +110,7 @@ Build production : ✅ `npm run build` → `dist/` ~588 KiB JS gzip ~148 KiB · 
 | Bloc | État | Notes |
 |---|---|---|
 | Scaffold Vite + React + TS + Tailwind v3 | ✅ | `npm run build` OK |
-| PWA (vite-plugin-pwa, Workbox) | ✅ | manifest + SW générés ; CacheFirst sur `/molecules/*.json` |
+| PWA | — | désactivée en variante iframe ; le `sw.js` d'USCA-Connect pré-cache `metaboscope/dist/` |
 | Icônes PWA (SVG `any maskable`) | ✅ | `public/icons/icon.svg` + `public/favicon.svg` |
 | Types TypeScript schéma v2 | ✅ | `src/types/molecule.ts` (extension `source: string \| string[]` planifiée T9) |
 | Index de données + recherche | ✅ | `searchMolecules()`, normalisation accents, tri exact > préfixe DCI > préfixe synonyme > contient |
@@ -141,7 +126,6 @@ Build production : ✅ `npm run build` → `dist/` ~588 KiB JS gzip ~148 KiB · 
 | Briques UI atomiques (Badge, Accordion, AutoComplete, SourceLink, EmptyState) | ✅ | T5-T8 livrées sessions 1-2 |
 | Tests smoke (MoleculeCard) | ✅ | T12 livrée — 4 tests passent |
 | Bannière offline | ✅ | `OfflineBanner.tsx` |
-| **Branche d'implémentation** | `feat/v1-implementation` | poussée sur `origin`, prête pour reprise multi-poste |
 
 ---
 
@@ -204,7 +188,7 @@ interface Molecule {
 
 **Total : ~110 codes canoniques.** Pour ajouter un code : 1) PR sur `scripts/validate-molecules.mjs` (Set `PD_CODES`), 2) mise à jour de cette liste dans `CLAUDE.md` §6, 3) usage dans les JSON.
 
-> **Dette v1.0.1 — codes hors vocabulaire (~150 occurrences)** : les JSON sessions 6-13 contiennent des codes diacritiques (`dépendance-documented`, `sédation`, `mésusage-documented`, `hépatotox`, `idéation-*`, `psychose-réactivation`, etc.) et des codes ad-hoc à normaliser (`psychose-aiguë`, `nausées`, `convulsions`, `hyperthermie-maligne`, etc.). **Ils sont tolérés en runtime** (fallback `pdAlertLabel` → label brut + severity neutral) mais signalés comme **warnings** par `npm run validate:molecules`. Liste exhaustive : `src/data/warnings.md` §2. Normalisation prévue v1.0.1 (cf. plan §16 « Veille v1.0.1 »).
+> **Dette v1.0.1 — codes hors vocabulaire (~150 occurrences)** : les JSON sessions 6-13 contiennent des codes diacritiques (`dépendance-documented`, `sédation`, `mésusage-documented`, `hépatotox`, `idéation-*`, `psychose-réactivation`, etc.) et des codes ad-hoc à normaliser (`psychose-aiguë`, `nausées`, `convulsions`, `hyperthermie-maligne`, etc.). **Ils sont tolérés en runtime** (fallback `pdAlertLabel` → label brut + severity neutral) mais signalés comme **warnings** par `npm run validate:molecules`. Liste exhaustive : `src/data/warnings.md` §2. Normalisation prévue v1.0.1 (cf. §17).
 
 **Préfixes sources autorisés (regex `SOURCE_PREFIX`)** : `PMID:` `DOI:` `FDA:` `EMA:` `ANSM:` `CredibleMeds:` `CPIC:` `DPWG:` `StatPearls:` `HUG:` `CBIP:` `PMC:` `NBK:` `EMCDDA:` `ResearchGate:` `bioRxiv:` `CDC:`
 
@@ -352,20 +336,9 @@ npm run test:ui      # Vitest UI
 # Type-check seul
 npx tsc -b
 
-# Validation JSON molécules (script à créer si besoin)
+# Validation JSON molécules
 npm run validate:molecules
 ```
-
----
-
-## 13. Reprise (HISTORIQUE — superseded par §16)
-
-> **Cette section est conservée à titre historique.** Le brainstorming du 2026-04-27 a remplacé cette TODO ad hoc par un plan d'implémentation complet : voir §16. La TODO ci-dessous reflète l'état avant brainstorming et est désormais obsolète :
-> - L'organisation en *« Modules 1/2/3 »* a évolué vers **3 onglets** (Recherche/Fiche, Interactions, Atlas) — onglet *Substances* supprimé, médicaments + drogues + NPS unifiés dans la recherche.
-> - Le périmètre v1 a été cadré (sans saisie de génotype, sans schéma visuel, ingestion HUG/CBIP en v1.1).
-> - L'ordre d'implémentation a été redessiné en **Approche B atomique** (briques avant pages).
-
-L'ancienne TODO était : Module 1 → Module 2 → Module 3 stub → Disclaimer → tests → script validation. **Désormais : suivre le plan §16.**
 
 ---
 
@@ -388,8 +361,6 @@ npm install            # si node_modules absent
 npm run dev            # http://localhost:5173
 ```
 
-Pour la suite : voir §16 — chantier post-brainstorming, plan d'implémentation 22 tâches.
-
 ---
 
 ## 16. Chantier post-brainstorming v1 (état au 2026-04-29 — v1.0 livrée)
@@ -407,7 +378,7 @@ Pour la suite : voir §16 — chantier post-brainstorming, plan d'implémentatio
 | **Session 7** (T20-T22) | T20 skip, T21 compare-sources, T22 acceptance | ✅ DONE | `1766f9a` → `f792152` (T21 + 2 fix-ups), T22 = ce commit |
 
 **Décisions cliniques cristallisées sessions T1-T12 :**
-- **Vocabulaire codes PD canoniques étendu** de 22 → ~110 codes ASCII pur (cf. §6 + `scripts/validate-molecules.mjs:PD_CODES`). ~150 codes hors vocabulaire (diacritiques + ad-hoc) tolérés en runtime via fallback `pdAlertLabel` mais signalés par validate comme **warnings** (à normaliser v1.0.1 — voir plan §16 « Veille v1.0.1 »).
+- **Vocabulaire codes PD canoniques étendu** de 22 → ~110 codes ASCII pur (cf. §6 + `scripts/validate-molecules.mjs:PD_CODES`). ~150 codes hors vocabulaire (diacritiques + ad-hoc) tolérés en runtime via fallback `pdAlertLabel` mais signalés par validate comme **warnings** (à normaliser v1.0.1 — voir §17).
 - **Préfixes sources étendus** : `PMC:`, `NBK:`, `EMCDDA:` (sessions 1-5) puis `ResearchGate:`, `bioRxiv:`, `CDC:` (sessions 6-13) rejoignent les préfixes du plan.
 - **Sources internes LLM bannies** : `Gemini DR X`, `Plan_de_recherche_*`, `métaboscope GPT *`, `Mise_à_jour_*`, `Rapport HUG 2020 extension`, `Rapport MetaboScope Substances`, `Italie 2014-2025`, `Littérature PK`. **Règle absolue** : si pas de préfixe sourçable → `zone_grise: true` au niveau cellule, JAMAIS d'invention. Le validate les **tolère comme warnings** (dette v1.0.1).
 - **Paire BZD + opioïde = red** (FDA boxed warning 2016, étendu 2019 aux gabapentinoïdes). Cf. §7.
@@ -415,21 +386,14 @@ Pour la suite : voir §16 — chantier post-brainstorming, plan d'implémentatio
 - **Validate-molecules en mode errors/warnings** : exit 0 si dette documentée seulement (warnings non bloquants), exit 1 si invariants vraiment cassés (id manquant, JSON invalide, sources ND, etc.).
 - **2 formats de wrapper JSON acceptés** : `{molecules: []}` (sessions 1-10) et `Molecule[]` direct (sessions 11-13). Helper `extractMolecules()` côté `src/data/index.ts` et `validate-molecules.mjs`.
 
-### Reprise multi-poste
-
-Si la session reprend sur un autre PC :
+### Vérification des données et du code
 
 ```bash
-git clone https://github.com/jcluisada-cmd/MetaboScope.git
-cd MetaboScope
-git checkout feat/v1-implementation
-git pull
+cd metaboscope
 npm install
 npm run validate:molecules    # doit afficher "✓ Tous les invariants respectés (avec warnings)"
-npm run test                  # 34 tests doivent PASS (6 data + 13 scoring + 11 labels + 4 MoleculeCard)
+npm run test
 ```
-
-Puis trigger naturel **« lance les subagents »** → reprend à T13 (`DisclaimerContext + Gate + Modal`).
 
 ### Ce qui a été produit pendant la session brainstorming du 2026-04-27
 
@@ -446,7 +410,7 @@ Puis trigger naturel **« lance les subagents »** → reprend à T13 (`Disclaim
   - 22 tâches sur 7 sessions, **Approche B atomique**
   - Chaque tâche = un commit atomique (test FAIL → implement → test PASS → commit), reprenable cold
   - Estimation : ~14-20h de travail focused
-- **Sources externes regroupées dans `data_hug_cbip/`** (en `.gitignore`, reproductibles) :
+- **Sources externes regroupées dans `data_hug_cbip/`** (versionnées dans le repo) :
   - `data_hug_cbip/hug_2020_opus.json` — extraction Claude Opus du PDF HUG 2020 (245 mol., qualité élevée, rang substrat + métabolite_actif)
   - `data_hug_cbip/cbip_gpt.json` — extraction GPT du HTML CBIP (472 mol., couverture étendue 2024+, sans rang substrat)
   - `data_hug_cbip/CBIP_interactions_V3_audit.json` — audit interne GPT (45 incohérences CBIP à dédupliquer/arbitrer)
@@ -455,86 +419,6 @@ Puis trigger naturel **« lance les subagents »** → reprend à T13 (`Disclaim
   - `data_hug_cbip/metaboscope_audit_cbip_vs_hug_summary.json` — 508 mol union, 27 high-severity à arbitrer manuellement
   - `data_hug_cbip/metaboscope_audit_cbip_vs_hug_divergences.csv` — 1194 lignes, prêtes à filtrer
   - `data_hug_cbip/metaboscope_audit_cbip_vs_hug_complete.json` — données fusionnées par molécule (1.7 MB)
-
-### Pour reprendre l'implémentation à la prochaine session
-
-> **🚀 TRIGGER EN LANGAGE NATUREL — IMPORTANT** : si JC dit *« lance les subagents »*, *« lance le plan »*, *« attaque l'implémentation »*, *« passe à l'exécution »* ou tout équivalent, **exécute automatiquement la commande ci-dessous** sans demander de confirmation supplémentaire. JC n'a pas à retenir la commande exacte.
-
-**Commande à exécuter** (subagent-driven, recommandé) :
-
-```
-/superpowers:subagent-driven-development docs/superpowers/plans/2026-04-27-metaboscope-modules.md
-```
-
-Le skill dispatchera un sous-agent par tâche T1 → T22 avec checkpoint review entre chacune. JC peut interrompre à n'importe quel moment, le plan est conçu pour reprendre cold.
-
-**Variante (inline, batch)** : si JC dit *« lance en mode inline »* ou *« inline »* :
-
-```
-/superpowers:executing-plans docs/superpowers/plans/2026-04-27-metaboscope-modules.md
-```
-
-Exécution batch dans la session courante avec checkpoints.
-
-### Ordre d'attaque par défaut (Approche B atomique pure — sécurité d'abord)
-
-| Session | Tâches | Description | Effort |
-|---|---|---|---|
-| 1 | T1-T6 | Filet sécurité (script validation + tests data + tests scoring) + briques utils + Badge + Accordion | 2-3h |
-| 2 | T7-T9 | AutoComplete + SourceLink + EmptyState + extension types `source: string | string[]` | 1-2h |
-| 3 | T10-T12 | SummaryHeader + 11 sections accordéon + MoleculeCard + tests smoke | 3-4h |
-| 4 | T13-T17 | Disclaimer (Context+Gate+Modal) + Cart Context + SearchPage + MoleculePage + routing | 3-4h |
-| 5 | T18 | InteractionPage refactor (panier + 5 cartes PD + paires PK + PGx rappel) | 2h |
-| 6 | T19 | AtlasPage + helper `buildAtlasIndex()` | 1-2h |
-| 7 | T20-T22 | T20 OPTIONNELLE (parser cheerio CBIP) + T21 compare-sources + acceptation finale | 2-3h |
-
-### 🎨 Chemin court "UI visible le plus vite possible" (alternative)
-
-> Si JC dit *« je veux voir une UI rapidement »*, *« montre-moi un truc qui tourne »*, *« vite un visuel »* ou équivalent — **utiliser cet ordre alternatif**, qui retarde les tests à la fin pour produire du rendu navigable au plus tôt :
-
-**Sprint 1 — Premier UI navigable (~3-4h)** :
-- T4 `utils/labels.ts` (mapping codes PD + sources + couleurs)
-- T5 `Badge` (composant visible immédiatement)
-- T6 `Accordion`
-- T7 `AutoComplete` (input recherche fonctionnel)
-- T8 `SourceLink` + `EmptyState`
-- T13 `DisclaimerContext` + `DisclaimerModal` + `DisclaimerGate` (sinon l'app reste bloquée)
-- T14 `CartContext` (sinon crash sur `useCart`)
-- T17 abrégé : `App.tsx` + `Layout.tsx` 3 onglets + suppression `SubstancesPage` (avec `MoleculePage`/`AtlasPage` en stubs minimaux)
-- T15 `SearchPage` (avec autocomplete fonctionnel, mais le clic peut juste ouvrir un placeholder pour l'instant)
-
-→ **Résultat** : modale Disclaimer → page d'accueil → onglet Recherche avec autocomplete + cartes-résultat sélectionnables → nav 3 onglets fonctionnelle.
-
-**Sprint 2 — Fiches consultables (~3-4h)** :
-- T10 `SummaryHeader` (bandeau résumé fonctionnel)
-- T11 les 11 sections accordéon (`SectionPhase1Cyp` à `SectionSources`)
-- T12 `MoleculeCard` (assemblage)
-- T16 `MoleculePage` (route `/search/:id`)
-
-→ **Résultat** : clic sur résultat → fiche détaillée avec accordéons + bouton "Ajouter au comparateur" fonctionnel.
-
-**Sprint 3 — Module 2 visible (~2h)** :
-- T18 `InteractionPage` refactor complet
-
-→ **Résultat** : vérificateur d'interactions opérationnel.
-
-**Sprint 4 — Atlas (~1-2h)** :
-- T19 `AtlasPage` + `buildAtlasIndex()`
-
-→ **Résultat** : tous les 3 modules visibles et connectés.
-
-**Sprint 5 — Filet de sécurité (~2h, en dette technique short-term)** :
-- T1 script validation JSON
-- T2 tests data
-- T3 tests scoring
-- T9 mise à jour types `source: string | string[]`
-
-**Sprint 6 — Multi-sources (~1h grâce à l'audit pré-généré)** :
-- T20 (skip — extraction GPT déjà faite)
-- T21 wrapper consommant `data_hug_cbip/metaboscope_audit_cbip_vs_hug_*` → rapport markdown
-- T22 acceptation finale (build prod + parcours bout en bout)
-
-**⚠️ Trade-off du chemin court** : pendant les Sprints 1-4, les tests `tests/scoring.test.ts` n'existent pas encore. Si un bug subtil dans `scoreQT()` se cache, il sera découvert via l'UI plutôt que par un test. C'est acceptable pour un solo dev qui veut voir tourner vite, mais le Sprint 5 n'est **pas** négociable — il doit suivre les Sprints 1-4 sans report.
 
 ### Notes techniques importantes pour la prochaine session
 
@@ -565,8 +449,6 @@ Pages associées dans `C:/Users/jclui/Documents/ObsidianVaults/wiki-brain/wiki/`
 - **Multi-source audit** (T21) : `npm run compare:sources` produit `docs/audits/cbip-hug-divergences-{date}.{md,json}` (gitignored, régénérable) — 508 union CBIP × HUG, 57 recouvrement avec JSON, 451 candidats v1.1, 30 divergences high-severity.
 
 ### v1.0.1 — dette technique immédiate (1-2 jours, pas de feature)
-
-Détaillée dans §16 sous-section « Veille v1.0.1 ». Synthèse :
 
 1. **Normaliser ~150 codes PD hors vocabulaire** (`src/data/warnings.md` §2) — diacritiques + ad-hoc → ASCII canonique.
 2. **Supprimer ~25 sources LLM internes** (`Gemini DR X`, `métaboscope GPT 3`, etc., `warnings.md` §4) — remplacer par `zone_grise: true` au niveau cellule.

@@ -1,5 +1,7 @@
 # MASTER PROMPT — EEG / ECT — USCA CONNECT
 
+> **Statut : exécuté — ne pas relancer tel quel.** Les fiches (dont `fiche_ect.html`) et `assets/` vivent dans `eeg_ect/` ; aucun `eeg_ect/index.json` n'existe ; la carte « EEG / ECT » est dans `staff/toolbox-app/src/App.jsx`. Les chemins `EEG_ECT_handbook/`, `USCA-Assistant/` et `staff/toolbox.html` ci-dessous n'existent plus comme cibles. Pour modifier une fiche, éditer `eeg_ect/fiche_*.html` directement.
+
 Tu es un assistant expert :
 - en EEG clinique
 - en neurophysiologie

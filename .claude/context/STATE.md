@@ -5,21 +5,9 @@
 
 ## Version courante
 
-**v4.50** (2026-09-22) — sécurisation `delete-user`, CDN Supabase/React épinglés, extern/étudiant sur Toolbox Vite, SW `usca-v4.50`. Précédée de **v4.49** (2026-06-18) — Tailwind pré-compilé livré et confirmé en réalité :
-`grep -rn "tailwindcss/browser" --include="*.html" .` sur l'arbre de travail principal
-ne retourne **aucun résultat** (les seules occurrences restantes sont dans
-`.claude/worktrees/*` — des worktrees Git obsolètes, hors périmètre, à ignorer).
-CDN runtime retiré des 6 pages racine, remplacé par `shared/tailwind.css`
-(généré via `@tailwindcss/cli@4.3.1` épinglé, `npm run build:css`). SW `usca-v4.49`.
+**v4.50** (2026-09-22) — sécurisation `delete-user`, CDN Supabase/React épinglés, extern/étudiant sur Toolbox Vite, SW `usca-v4.50`. Précédée de **v4.49** (2026-06-18) — Tailwind pré-compilé (`shared/tailwind.css` via `@tailwindcss/cli@4.3.1`, `npm run build:css`), plus aucun CDN Tailwind runtime dans les pages racine.
 
-**Correction apportée par cet audit** : `docs/superpowers/plans/2026-06-18-tailwind-precompile.md`
-a toutes ses cases `- [ ]` non cochées (y compris Steps 6/7 de validation prod et Task 8
-doc) — ce qui donnerait l'impression que le chantier est encore ouvert. **Ce n'est pas le
-cas** : CHANGELOG.md et CLAUDE.md documentent déjà la livraison v4.49, et le code réel
-confirme l'absence de CDN. Le plan n'a simplement pas été mis à jour case par case
-(numérotation de version différente aussi : le plan visait v4.52, la livraison réelle
-s'est faite en v4.49 — 3 versions "économisées" car les lots ont été groupés). Ignorer
-les cases non cochées de ce plan ; se fier à CHANGELOG.md + `git log`.
+Le plan `docs/superpowers/plans/2026-06-18-tailwind-precompile.md` est **clos** malgré ses cases non cochées : se fier à `CHANGELOG.md` et `git log`. Ignorer `.claude/worktrees/*` (worktrees obsolètes, hors périmètre).
 
 ## Fonctionnalités terminées (aperçu — détail dans `MODULES.md`)
 
