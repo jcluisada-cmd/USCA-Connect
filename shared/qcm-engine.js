@@ -29,6 +29,14 @@
     return `${itemLabel} - Q${numero}`;
   }
 
+  /** UUID de l'utilisateur connecté. Les lectures "My*" filtrent dessus explicitement :
+   *  la RLS v18 ouvre aussi aux médecins les données des externes (mode ?preview=tuteur). */
+  async function currentUserId() {
+    const { data: user } = await window.sb.auth.getUser();
+    if (!user?.user) throw new Error('Utilisateur non authentifié');
+    return user.user.id;
+  }
+
   function shuffle(arr) {
     const a = arr.slice();
     for (let i = a.length - 1; i > 0; i--) {
@@ -152,9 +160,11 @@
     /** Liste les signalements de l'utilisateur courant */
     async getMyFlags() {
       if (!window.sb) throw new Error('Client Supabase indisponible');
+      const uid = await currentUserId();
       const { data, error } = await window.sb
         .from('qcm_flags')
         .select('*')
+        .eq('user_id', uid)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
@@ -163,9 +173,11 @@
     /** Statistiques : uniquement les sessions terminées de l'utilisateur courant */
     async getMyStats() {
       if (!window.sb) throw new Error('Client Supabase indisponible');
+      const uid = await currentUserId();
       const { data, error } = await window.sb
         .from('qcm_sessions')
         .select('item, mode, nb_questions, score, created_at')
+        .eq('user_id', uid)
         .eq('statut', 'terminee')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -203,9 +215,11 @@
     /** Retourne les sessions en cours avec le nombre de réponses déjà enregistrées */
     async getMyInProgressSessions() {
       if (!window.sb) throw new Error('Client Supabase indisponible');
+      const uid = await currentUserId();
       const { data, error } = await window.sb
         .from('qcm_sessions')
         .select('*, qcm_reponses(count)')
+        .eq('user_id', uid)
         .eq('statut', 'en_cours')
         .order('created_at', { ascending: false });
       if (error) throw error;

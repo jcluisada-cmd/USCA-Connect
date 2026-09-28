@@ -236,6 +236,25 @@
       </div>
     </section>
 
+    <!-- CARTE 6 : SIGNALEMENTS QCM + réponses du tuteur (masquée en mode tuteur) -->
+    <section id="section-flags" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <button class="w-full px-5 py-4 flex items-center justify-between accordion-toggle" data-target="flags-body">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+          </div>
+          <div class="text-left">
+            <p class="text-sm font-bold text-slate-800">Signalements QCM</p>
+            <p id="flags-count" class="text-[11px] text-slate-500">—</p>
+          </div>
+        </div>
+        <svg class="accordion-icon transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div id="flags-body" class="hidden border-t border-slate-100">
+        <div id="flags-list" class="divide-y divide-slate-100"></div>
+      </div>
+    </section>
+
     <!-- LIGNE 2 PETITES CARTES : Message au tuteur + Exporter QCM -->
     <div id="section-small-cards" class="grid grid-cols-2 gap-3">
       <!-- Message au tuteur (raccourci vers accordion Questions au tuteur) -->
@@ -793,7 +812,7 @@ var _previewTuteur = new URLSearchParams(location.search).get('preview') === 'tu
     document.getElementById('hdr-nom').textContent = 'QCM EDN — Vue tuteur';
     document.getElementById('tuteur-banner').classList.remove('hidden');
     // Masquer les sections non pertinentes pour le tuteur (Patients, signalements, export, checklist, questions)
-    ['section-patients-card', 'section-small-cards', 'section-checklist', 'section-questions'].forEach(function(sid) {
+    ['section-patients-card', 'section-small-cards', 'section-checklist', 'section-questions', 'section-flags'].forEach(function(sid) {
       var s = document.getElementById(sid);
       if (s) s.style.display = 'none';
     });
@@ -2019,13 +2038,14 @@ async function loadFlags() {
   if (!box || !counter) return;
   try {
     var flags = await QCMEngine.getMyFlags();
+    clear(box);
     if (!flags.length) {
       counter.textContent = 'Aucun signalement';
+      box.appendChild(el('p', { class: 'px-5 py-4 text-xs text-slate-400', text: 'Utilisez 💬 ou 👎 pendant une session QCM pour interroger le tuteur sur une question.' }));
       return;
     }
     var nbOuv = flags.filter(function(f){ return f.statut === 'ouvert'; }).length;
     counter.textContent = flags.length + ' signalement' + (flags.length>1?'s':'') + ' · ' + nbOuv + ' en attente';
-    clear(box);
     flags.forEach(function(f) {
       var d = new Date(f.created_at).toLocaleDateString('fr-FR');
       var statutClass = f.statut === 'traite' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
@@ -2967,6 +2987,7 @@ async function startFreshSession(item, questions) {
   document.getElementById('qcm-flag').style.display = '';
   document.getElementById('qcm-thumbdown').style.display = '';
   document.getElementById('qcm-next').style.display = '';
+  resetNextBtn();
   showQuestion();
   document.getElementById('qcm-modal').classList.remove('hidden');
 }
@@ -3003,25 +3024,46 @@ async function resumeSession(session) {
     var reponses = existingReponses.map(function(r) {
       return { question_source: r.question_source, reponse_choisie: r.reponse_choisie, correct: r.correct, temps_ms: r.temps_ms };
     });
-    qcmState = { sessionId: session.id, item: item, mode: currentMode, questions: sessionQuestions, idx: startIdx, reponses: reponses, tStart: Date.now() };
+    // Toutes les questions déjà répondues (fermeture par ✕ au lieu de « Terminer ») :
+    // on finalise directement au lieu d'afficher une question inexistante.
+    var allAnswered = startIdx >= sessionQuestions.length;
+    qcmState = { sessionId: session.id, item: item, mode: currentMode, questions: sessionQuestions, idx: Math.min(startIdx, sessionQuestions.length - 1), reponses: reponses, tStart: Date.now() };
     document.getElementById('qcm-flag').style.display = '';
     document.getElementById('qcm-thumbdown').style.display = '';
     document.getElementById('qcm-next').style.display = '';
-    showQuestion();
+    resetNextBtn();
+    if (allAnswered) finishSession(); else showQuestion();
     document.getElementById('qcm-modal').classList.remove('hidden');
   } catch(e) {
     alert('Erreur reprise : ' + e.message);
   }
 }
 
+// Remet le bouton « Suivant » dans son état initial : sans ça, « Terminer »/« Fermer »
+// persistait à la session suivante après une fermeture par ✕.
+function resetNextBtn() {
+  var b = document.getElementById('qcm-next');
+  b.textContent = 'Suivant';
+  b.onclick = null;
+  b.disabled = true;
+}
+
 document.getElementById('qcm-close').addEventListener('click', function() {
   document.getElementById('qcm-modal').classList.add('hidden');
   if (qcmState) { loadInProgress(); } // rafraîchir la bannière "en cours"
   qcmState = null;
+  resetNextBtn();
 });
 
+// Seul gestionnaire du bouton : Suivant → Terminer → Fermer (état porté par qcmState.finished)
 document.getElementById('qcm-next').addEventListener('click', function() {
   if (!qcmState) return;
+  if (qcmState.finished) {
+    document.getElementById('qcm-modal').classList.add('hidden');
+    qcmState = null;
+    resetNextBtn();
+    return;
+  }
   if (qcmState.idx + 1 >= qcmState.questions.length) {
     finishSession();
   } else {
@@ -3121,6 +3163,9 @@ function onAnswer(q, btn) {
 }
 
 async function finishSession() {
+  if (qcmState.finished) return; // garde anti double enregistrement
+  qcmState.finished = true;
+  var sessionId = qcmState.sessionId;
   var score = qcmState.reponses.filter(function(r) { return r.correct; }).length;
   var total = qcmState.questions.length;
   var content = document.getElementById('qcm-content');
@@ -3134,20 +3179,17 @@ async function finishSession() {
   content.appendChild(wrap);
   var nextBtn = document.getElementById('qcm-next');
   nextBtn.textContent = 'Fermer';
-  nextBtn.onclick = function() {
-    document.getElementById('qcm-modal').classList.add('hidden');
-    qcmState = null;
-    nextBtn.textContent = 'Suivant';
-    nextBtn.onclick = null;
-  };
+  nextBtn.disabled = false;
+  // Le statut est cherché à chaque fois : la modale a pu être fermée/réutilisée pendant l'await
+  function setSaveStatus(txt) { var s = document.getElementById('save-status'); if (s) s.textContent = txt; }
   try {
-    if (qcmState.sessionId) {
-      await QCMEngine.completeSession(qcmState.sessionId, score);
+    if (sessionId) {
+      await QCMEngine.completeSession(sessionId, score);
     }
-    document.getElementById('save-status').textContent = '✓ Session enregistrée';
+    setSaveStatus('✓ Session enregistrée');
     loadInProgress(); // plus de session en cours → vider la bannière
   } catch(e) {
-    document.getElementById('save-status').textContent = '⚠ Échec enregistrement : ' + e.message;
+    setSaveStatus('⚠ Échec enregistrement : ' + e.message);
   }
 }
 

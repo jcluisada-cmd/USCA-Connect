@@ -193,7 +193,8 @@ Modal `modal-notif-prompt` (admin médecin uniquement et patient). Trigger 1.5s 
 - Carte Mon QCM EDN
 - Checklist personnelle (stockée dans `profiles.checklist_items`, debounce 600ms)
 - Questions au tuteur
-- Signalements + Export
+- Signalements QCM (`#section-flags`, v4.51) : liste des 💬/👎 de l'externe avec statut et réponse du tuteur (`qcm_flags.tuteur_reponse`)
+- Export
 
 ### Onglet Toolbox
 Iframe lazy-load `../staff/toolbox-app/dist/index.html?embedded=true` (Toolbox Vite, comme `admin/` — depuis v4.50 ; avant : `staff/toolbox.html`). Les liens internes de la Toolbox (ressources, fiches, EEG/ECT, MetaboScope, post-cure) sont en chemins **absolus depuis la racine** (`/ressources_doc/…`) depuis v4.52.
