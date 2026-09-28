@@ -42,7 +42,9 @@ live, code) après 3 mois sans activité, puis livré les correctifs validés pa
   uniquement ; Cloudflare redirige correctement).
 - **Non testé** : chemin positif de `delete-user` (suppression réelle par un admin) — nécessite
   une session admin. À valider par JC en supprimant un compte de test depuis admin/.
-- **Non testé** : onglet Toolbox d'extern/ avec une vraie session externe (garde de session).
+- v4.52 : liens `../` de la Toolbox Vite passés en absolus (fiches/ressources/EEG/MetaboScope en 404
+  depuis v4.44 admin, v4.50 extern). Vérifié Playwright sur `/staff/toolbox-app/dist/index.html?embedded=true`
+  (0 réponse ≥ 400). **Reste à valider par JC** : onglet Toolbox dans admin/ et extern/ avec une vraie session.
 - Backend sain : cron `usca-push-reminders` chaque minute, 0 échec/7 j, appels push en 200.
 
 ## Open issues

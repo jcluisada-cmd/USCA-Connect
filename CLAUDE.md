@@ -1,6 +1,6 @@
 # USCA Connect — Référence projet
 
-> **Version courante** : v4.51 (2026-09-28) — faille `profiles` (auto-promotion admin) corrigée + bouton ↺ réinitialisation externe réparé, migration v42 (SW `usca-v4.51`).
+> **Version courante** : v4.52 (2026-09-28) — Toolbox Vite : liens internes en chemins absolus (ressources, fiches, EEG/ECT, MetaboScope étaient en 404) (SW `usca-v4.52`).
 > Détail de cette release et des précédentes : `CHANGELOG.md` (1 ligne/version), `CLAUDE_ARCHIVE.md` §B (détail).
 > **État actuel, backlog, git** : `.claude/context/STATE.md`. **Décisions passées** : `.claude/context/DECISIONS.md`. **Reprise de session** : `.claude/context/HANDOFF.md`.
 
@@ -46,7 +46,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 | **URL production** | https://usca-connect.pages.dev |
 | **Hébergement** | Cloudflare Pages (auto-deploy sur `git push main`) |
 | **BDD & Auth** | Supabase — pydxfoqxgvbmknzjzecn.supabase.co |
-| **Service Worker** | `usca-v4.51` |
+| **Service Worker** | `usca-v4.52` |
 | **Client Git** | GitHub Desktop |
 | **Chemin local** | `C:\Users\jclui\Documents\USCA-Connect\` |
 | **Mot de passe staff commun** | `usca_c15` |

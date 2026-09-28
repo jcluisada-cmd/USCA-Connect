@@ -150,7 +150,7 @@ Trigger 2.5s après ouverture si :
 - Section "Mon élève" (livret IFSI) + section "Mon externe" (QCM EDN)
 
 ### Onglet Toolbox
-Iframe vers `staff/toolbox.html` avec dark mode synchronisé (URL param `?theme=`).
+Iframe vers `staff/toolbox-app/dist/index.html` (Toolbox Vite, depuis v4.44) avec dark mode synchronisé (URL param `?theme=`).
 
 ### Onglet Planning
 - Navigation semaine ← → avec dates et badge Semaine A/B
@@ -196,7 +196,7 @@ Modal `modal-notif-prompt` (admin médecin uniquement et patient). Trigger 1.5s 
 - Signalements + Export
 
 ### Onglet Toolbox
-Iframe lazy-load `staff/toolbox.html?embedded=true`.
+Iframe lazy-load `../staff/toolbox-app/dist/index.html?embedded=true` (Toolbox Vite, comme `admin/` — depuis v4.50 ; avant : `staff/toolbox.html`). Les liens internes de la Toolbox (ressources, fiches, EEG/ECT, MetaboScope, post-cure) sont en chemins **absolus depuis la racine** (`/ressources_doc/…`) depuis v4.52.
 
 ### Onglet Planning
 Copie complète du planning admin, lazy-load.
@@ -300,6 +300,8 @@ Synchronisé entre app principale et formulaires post-cure.
 ---
 
 ## §7. Toolbox Soignant V1 (`staff/toolbox.html`)
+
+> Depuis v4.44, la Toolbox servie est la sous-app Vite `staff/toolbox-app/` (source `src/App.jsx`, build commité `dist/`, `base: './'`). Servie depuis `/staff/toolbox-app/dist/`, elle doit utiliser des liens **absolus** vers les dossiers du site (`/ressources_doc/`, `/fiches-traitements/`, `/fiches-substances/`, `/eeg_ect/`, `/metaboscope/dist/`, `/postcure/`, `/etudiant/`, `/shared/`, `/sw.js`) : un `../` résoudrait vers `/staff/toolbox-app/…` (404). Corrigé v4.52.
 
 ### Accueil — 4 grandes + 5 petites cartes (depuis v4.14)
 

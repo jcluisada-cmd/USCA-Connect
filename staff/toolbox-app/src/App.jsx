@@ -504,7 +504,7 @@ const FICHES_PATIENT_CATS = [
   {cat:"Stimulants",fiches:[{s:"methylphenidate",n:"Méthylphénidate (Ritaline)"}]}
 ];
 
-// Fiches substances poussées au patient — HTML servies depuis ../fiches-substances/fiche_<slug>_patient.html
+// Fiches substances poussées au patient — HTML servies depuis /fiches-substances/fiche_<slug>_patient.html
 const FICHES_SUBSTANCES_CATS = [
   {cat:"Dépresseurs du SNC",fiches:[{s:"alcool",n:"Alcool"},{s:"ghb",n:"GHB / GBL"}]},
   {cat:"Stimulants",fiches:[{s:"3mmc",n:"3-MMC / Cathinones"},{s:"cocaine",n:"Cocaïne"},{s:"crack",n:"Crack"},{s:"mdma",n:"MDMA / Ecstasy"},{s:"methamphetamine",n:"Méthamphétamine"}]},
@@ -514,7 +514,7 @@ const FICHES_SUBSTANCES_CATS = [
   {cat:"Tabac",fiches:[{s:"tabac",n:"Tabac / Nicotine"}]}
 ];
 
-// Les PDFs expert sont servis depuis ../fiches-traitements/fiches_expert/fiche_<slug>.pdf
+// Les PDFs expert sont servis depuis /fiches-traitements/fiches_expert/fiche_<slug>.pdf
 const FICHES_EXPERT_CATS = [
   {cat:"Neuroleptiques classiques (1ʳᵉ génération)", fiches:[
     {s:"chlorpromazine", n:"Chlorpromazine (Largactil)"},
@@ -572,7 +572,7 @@ function TraitementsView({onBack, onPickPatient}) {
           {isOpen ? I.chevD(C.n[400]) : I.chevR(C.n[400])}
         </button>
         {isOpen && <div style={{padding:"8px 10px 4px",borderTop:`1px solid ${C.bdr}`,background:"#fff"}}>
-          {group.fiches.map(f => <a key={f.s} href={"../fiches-traitements/fiches_expert/fiche_"+f.s+".pdf"} target="_blank" rel="noopener noreferrer"
+          {group.fiches.map(f => <a key={f.s} href={"/fiches-traitements/fiches_expert/fiche_"+f.s+".pdf"} target="_blank" rel="noopener noreferrer"
             className="card card-tap"
             style={{padding:11,marginBottom:5,display:"flex",alignItems:"center",justifyContent:"space-between",textDecoration:"none"}}>
             <div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -1074,7 +1074,7 @@ function RessourcesView({onBack}) {
 
   useEffect(() => {
     // SW : ce manifest est en stratégie network-first sans écriture cache (sw.js NO_CACHE_WRITE).
-    fetch("../ressources_doc/index.json")
+    fetch("/ressources_doc/index.json")
       .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(data => setRessources(Array.isArray(data.ressources) ? data.ressources : []))
       .catch(e => setError(e.message || "Chargement impossible"));
@@ -1118,7 +1118,7 @@ function RessourcesView({onBack}) {
             </div>
           ) : list.map((r,i) => {
             const tag = RESSOURCE_TAGS[r.tag] || RESSOURCE_TAGS["Général"];
-            const href = r.fichier.startsWith("http") ? r.fichier : "../ressources_doc/" + r.fichier;
+            const href = r.fichier.startsWith("http") ? r.fichier : "/ressources_doc/" + r.fichier;
             return <a key={i} href={href} target="_blank" rel="noopener noreferrer"
               className="card card-tap"
               style={{display:"flex",alignItems:"center",gap:10,padding:10,marginBottom:i===list.length-1?0:6,textDecoration:"none",borderColor:C.bdr}}>
@@ -1384,8 +1384,8 @@ function App() {
           {l:"Dossier post-cure",desc:"Volet médical, envoi patient",i:I.clipboard,v:"postcure_medecin",dm:"toolbox_postcure",c:C.t[800],bg:`linear-gradient(135deg, ${C.t[100]}, ${C.bg})`}
         ].map(item=>
           <div key={item.v} data-module={item.dm} className="card card-tap" style={{padding:16,marginBottom:10,display:"flex",alignItems:"center",gap:14,background:item.bg}} onClick={()=>{
-            if(item.v==='postcure_medecin'){window.open('../postcure/medecin.html','_blank');return;}
-            if(item.v==='livret_ifsi_preview'){window.open('../etudiant/?preview=demo','_blank');return;}
+            if(item.v==='postcure_medecin'){window.open('/postcure/medecin.html','_blank');return;}
+            if(item.v==='livret_ifsi_preview'){window.open('/etudiant/?preview=demo','_blank');return;}
             nav(item.v);
           }}>
             <div style={{width:48,height:48,borderRadius:14,background:item.c+"20",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{item.i(item.c,26)}</div>
@@ -1469,7 +1469,7 @@ function App() {
         //   - param URL ?theme= initial (lu au boot par metaboscope/src/main.tsx)
         //   - postMessage live via shared/theme.js déjà en place (notifie toutes les iframes au toggle)
         const themeParam = (localStorage.getItem('usca_theme') === 'dark') ? '?theme=dark' : '?theme=light';
-        const metaboscopePath = `../metaboscope/dist/index.html${themeParam}`;
+        const metaboscopePath = `/metaboscope/dist/index.html${themeParam}`;
         return <div className="fade-in">
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
             <button onClick={()=>nav("home")} title="Retour" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,borderRadius:8,background:C.n[100],border:"none",cursor:"pointer",flexShrink:0}}>{I.chevL(C.n[600])}</button>
@@ -1482,7 +1482,7 @@ function App() {
       case "eeg_ect":
         if (selEegFiche) {
           const themeParam = (localStorage.getItem('usca_theme') === 'dark') ? '?theme=dark' : '?theme=light';
-          const fichePath = `../eeg_ect/fiche_${selEegFiche.slug}.html${themeParam}`;
+          const fichePath = `/eeg_ect/fiche_${selEegFiche.slug}.html${themeParam}`;
           return <div className="fade-in">
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
               <button onClick={()=>setSelEegFiche(null)} title="Retour" style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,borderRadius:8,background:C.n[100],border:"none",cursor:"pointer",flexShrink:0}}>{I.chevL(C.n[600])}</button>
@@ -1589,7 +1589,7 @@ function App() {
           <button onClick={()=>setSelFiche(null)} style={{display:"flex",alignItems:"center",justifyContent:"center",width:32,height:32,borderRadius:8,background:C.n[100],border:"none",cursor:"pointer"}}>{I.chevL(C.n[600])}</button>
           <span style={{fontSize:14,fontWeight:800,color:C.n[800]}}>{selFiche.n}</span>
         </div>
-        <iframe className="fiche-iframe" src={selFiche.kind === "substance" ? ("../fiches-substances/fiche_"+selFiche.s+"_patient.html") : ("../fiches-traitements/fiches_patient/fiche_"+selFiche.s+"_patient.html")} style={{width:"100%",border:"none",height:"calc(100vh - 180px)",borderRadius:12}} title={selFiche.n}/>
+        <iframe className="fiche-iframe" src={selFiche.kind === "substance" ? ("/fiches-substances/fiche_"+selFiche.s+"_patient.html") : ("/fiches-traitements/fiches_patient/fiche_"+selFiche.s+"_patient.html")} style={{width:"100%",border:"none",height:"calc(100vh - 180px)",borderRadius:12}} title={selFiche.n}/>
       </div> : <TraitementsView onBack={()=>nav("home")} onPickPatient={setSelFiche}/>;
       case "bzdcalc": return <BZDCalc onBack={()=>nav("scores")}/>;
       case "cpzcalc": return <CPZCalc onBack={()=>nav("scores")}/>;
