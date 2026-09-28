@@ -223,7 +223,7 @@ Copie complète du planning admin, lazy-load.
 - Section "Mon externe" pour médecin/admin (analogue à "Mon élève")
 - Stats sessions, signalements en attente, réponse aux flags via modal
 - Questions de l'externe avec réponse inline
-- Bouton ↺ réinitialisation (supprime sessions/réponses/flags/questions au changement d'externe)
+- Bouton ↺ réinitialisation (RPC `reset_externe_data`, v42 : supprime sessions/réponses/flags/questions + vide la checklist au changement d'externe, affiche le bilan)
 - Tous les médecins voient l'externe (pas de tuteur désigné)
 - Accordion "Mes élèves" unifié : IFSI + QCM en sous-sections
 

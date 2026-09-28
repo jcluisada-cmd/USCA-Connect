@@ -1,6 +1,6 @@
 # USCA Connect — Référence projet
 
-> **Version courante** : v4.50 (2026-09-22) — sécurisation `delete-user`, CDN épinglés, extern/étudiant sur Toolbox Vite (SW `usca-v4.50`).
+> **Version courante** : v4.51 (2026-09-28) — faille `profiles` (auto-promotion admin) corrigée + bouton ↺ réinitialisation externe réparé, migration v42 (SW `usca-v4.51`).
 > Détail de cette release et des précédentes : `CHANGELOG.md` (1 ligne/version), `CLAUDE_ARCHIVE.md` §B (détail).
 > **État actuel, backlog, git** : `.claude/context/STATE.md`. **Décisions passées** : `.claude/context/DECISIONS.md`. **Reprise de session** : `.claude/context/HANDOFF.md`.
 
@@ -46,7 +46,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 | **URL production** | https://usca-connect.pages.dev |
 | **Hébergement** | Cloudflare Pages (auto-deploy sur `git push main`) |
 | **BDD & Auth** | Supabase — pydxfoqxgvbmknzjzecn.supabase.co |
-| **Service Worker** | `usca-v4.50` |
+| **Service Worker** | `usca-v4.51` |
 | **Client Git** | GitHub Desktop |
 | **Chemin local** | `C:\Users\jclui\Documents\USCA-Connect\` |
 | **Mot de passe staff commun** | `usca_c15` |
@@ -134,7 +134,7 @@ Tables auth : `device_tokens`, `presences_reunions`.
 
 Tables push : `push_subscriptions`, `push_last_message_staff`, `push_reminders_sent_groupe`.
 
-Tables QCM EDN : `tuteur_etudiant`, `qcm_sessions`, `qcm_reponses`, `qcm_flags`, `questions_tuteur`.
+Tables QCM EDN : `tuteur_etudiant`, `qcm_sessions`, `qcm_reponses`, `qcm_flags`, `extern_questions`.
 
 Tables livret IFSI : `etudiants_stages`, `etudiant_progression`.
 
