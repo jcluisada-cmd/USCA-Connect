@@ -67,35 +67,23 @@ window.auth = {
   },
 
   /**
-   * Inscription soignant (admin uniquement en Phase 4 RBAC)
+   * Création d'un compte soignant par un admin, via la Cloudflare Function
+   * /api/create-user (API admin Supabase + service_role côté serveur).
+   * La session de l'admin n'est pas touchée (plus de signUp côté client, v4.52).
+   * Renvoie { id } du compte créé.
    */
-  async registerStaff(email, password, nom, role, isAdmin) {
-    const { data, error } = await sb.auth.signUp({ email, password });
-    if (error) throw new Error(error.message);
-    // Créer le profil dans la table profiles
-    const { error: profileError } = await sb.from('profiles').insert({
-      id: data.user.id,
-      email,
-      nom,
-      role,
-      is_admin: isAdmin || false,
-      modules_actifs: auth._defaultModules(role)
+  async createStaff(email, password, nom, role, isAdmin) {
+    const { data } = await sb.auth.getSession();
+    const token = data.session ? data.session.access_token : null;
+    if (!token) throw new Error('Session expirée — reconnectez-vous');
+    const res = await fetch('/api/create-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ email, password, nom, role, isAdmin: !!isAdmin })
     });
-    if (profileError) throw new Error(profileError.message);
-    return data.user;
-  },
-
-  /** Modules par défaut selon le rôle */
-  _defaultModules(role) {
-    const map = {
-      admin: ['toolbox', 'dashboard', 'alertes', 'groupes', 'config'],
-      medecin: ['toolbox', 'dashboard', 'alertes', 'groupes', 'config'],
-      ide: ['toolbox', 'dashboard', 'alertes', 'groupes', 'config'],
-      etudiant: ['toolbox'],
-      etudiant_ide: ['livret'],
-      animateur: ['groupes']
-    };
-    return map[role] || [];
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || ('HTTP ' + res.status));
+    return { id: body.id };
   },
 
   /** Déconnexion soignant — révoque le token de cet appareil */

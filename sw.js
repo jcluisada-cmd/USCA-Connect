@@ -1,4 +1,4 @@
-const CACHE_NAME = 'usca-v4.51';
+const CACHE_NAME = 'usca-v4.52';
 
 // ── Configuration Push (partagé avec patient/index.html) ──
 const SUPABASE_URL_BASE = 'https://pydxfoqxgvbmknzjzecn.supabase.co';
@@ -86,7 +86,8 @@ const LOCAL_ASSETS = [
 const NETWORK_ONLY = [
   'supabase.co',
   '/api/slack',
-  '/api/delete-user'
+  '/api/delete-user',
+  '/api/create-user'
 ];
 
 // Chemins network-first sans écriture en cache (manifests qui changent souvent côté serveur)

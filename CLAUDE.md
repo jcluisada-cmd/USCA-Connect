@@ -1,6 +1,6 @@
 # USCA Connect — Référence projet
 
-> **Version courante** : v4.51 (2026-09-28) — faille `profiles` (auto-promotion admin) corrigée + bouton ↺ réinitialisation externe réparé, migration v42 (SW `usca-v4.51`).
+> **Version courante** : v4.52 (2026-09-28) — création des comptes soignants côté serveur (`/api/create-user`), inscriptions publiques Supabase à fermer, migration v43 (SW `usca-v4.52`).
 > Détail de cette release et des précédentes : `CHANGELOG.md` (1 ligne/version), `CLAUDE_ARCHIVE.md` §B (détail).
 > **État actuel, backlog, git** : `.claude/context/STATE.md`. **Décisions passées** : `.claude/context/DECISIONS.md`. **Reprise de session** : `.claude/context/HANDOFF.md`.
 
@@ -46,7 +46,7 @@ Développeur principal : **Dr JC Luisada**, psychiatre addictologue à l'USCA.
 | **URL production** | https://usca-connect.pages.dev |
 | **Hébergement** | Cloudflare Pages (auto-deploy sur `git push main`) |
 | **BDD & Auth** | Supabase — pydxfoqxgvbmknzjzecn.supabase.co |
-| **Service Worker** | `usca-v4.51` |
+| **Service Worker** | `usca-v4.52` |
 | **Client Git** | GitHub Desktop |
 | **Chemin local** | `C:\Users\jclui\Documents\USCA-Connect\` |
 | **Mot de passe staff commun** | `usca_c15` |
@@ -92,7 +92,8 @@ USCA-Connect/
 ├── data/                       ← Base QCM EDN (lazy-loaded)
 ├── postcure/                   ← Module post-cure (volets séparés)
 ├── shared/                     ← Modules JS partagés (supabase, auth, planning, fiches, etc.)
-├── functions/api/delete-user.js ← Cloudflare Function proxy suppression compte
+├── functions/api/delete-user.js ← Cloudflare Function proxy suppression compte (admin)
+├── functions/api/create-user.js ← Cloudflare Function création compte soignant (admin, v4.52)
 ├── fiches-traitements/         ← 29 fiches patient + 8 fiches expert PDFs
 ├── fiches-substances/          ← 16 fiches HTML d'information substances
 ├── ressources_doc/             ← Ressources Toolbox manifest-driven (index.json)
@@ -116,6 +117,7 @@ USCA-Connect/
 | **Soignant** | prenom.nom + mot de passe → Supabase Auth (email @aphp.fr) | localStorage, session Supabase |
 
 - Admin : champ `is_admin` boolean séparé du rôle métier
+- **Création de compte soignant** : uniquement par un admin via `POST /api/create-user` (JWT validé + `is_admin`, API admin Supabase avec `email_confirm: true`, profil inséré en service_role). **Inscriptions publiques désactivées** dans Supabase (Authentication → Sign In / Providers → « Allow new users to sign up » décoché) — ne jamais réintroduire `sb.auth.signUp` côté client.
 - Mode dev : triple-tap sur le logo
 - Auto-redirect si session existante
 - Rôles métier : `medecin`, `ide`, `psychologue`, `pharmacien`, `secretaire`, `externe`, `etudiant_ide`, `pds` (Poste de Soins infirmier — compte partagé)

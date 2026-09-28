@@ -18,6 +18,7 @@
 - `checklist_items` (JSONB, externe)
 - `push_preferences` (JSONB, v34) — NULL = défauts système
 - `push_pause_until` (DATE, v30) — pause vacances
+- RLS (v42 + v43) : SELECT `true` ; UPDATE soi-même ou admin (trigger `usca_profiles_protect` : `role`/`is_admin`/`email`/`id` réservés admin) ; **aucune policy INSERT** — profils créés uniquement par `functions/api/create-user.js` (service_role). Inscriptions publiques Supabase Auth désactivées.
 
 ### `patients` — Patients hospitalisés
 - `chambre`, `DDN`, `admission`, `sortie_prevue`
@@ -233,6 +234,7 @@ Anti-doublon messages staff.
 | v40 | 2026-05-29 | `contenus_partages.modifie_le` + policy `contenus_update_own` + DELETE resserré `contenus_delete_own` (chacun modifie/supprime ses propres messages) |
 | v41 | 2026-09-22 | Purge `cron.job_run_details` + job quotidien + `VACUUM FULL net._http_response` (journaux techniques) |
 | v42 | 2026-09-28 | `profiles` : UPDATE soi-même ou admin + trigger `usca_profiles_protect` (role/is_admin/email réservés admin) + INSERT `profiles_insert_self` ; RPC `reset_externe_data(uuid)` (bouton ↺ Mon externe) |
+| v43 | 2026-09-28 | `profiles` : suppression des policies INSERT (`profiles_insert_self`, `profiles_insert_auth`) — création de compte côté serveur (`/api/create-user`, service_role) ; + désactiver « Allow new users to sign up » |
 
 ---
 

@@ -1092,7 +1092,6 @@ loginForm.addEventListener('submit', async () => {
 
   try {
     const profile = await auth.loginStaff(email, password);
-    _adminCredentials = { email: email.includes('@') ? email : email + '@aphp.fr', password: password };
     showAdminApp(profile);
   } catch (err) {
     showLoginError(err.message);
@@ -1115,7 +1114,6 @@ let loadedAlertes = [];
 let loadedPermissions = [];
 let loadedMessagesPatients = []; // messages envoyés par patients (cree_par null), pour badge non-lu carte dashboard
 let currentProfile = null;
-let _adminCredentials = null; // Pour re-login après signUp
 
 // ── Afficher l'app admin ──
 function showAdminApp(profile) {
@@ -3119,20 +3117,10 @@ document.getElementById('btn-save-compte').addEventListener('click', async funct
   var email = id.includes('@') ? id : id + '@aphp.fr';
 
   try {
-    // Créer le compte Supabase Auth
+    // Création côté serveur (/api/create-user, réservé admin) : compte Auth + profil,
+    // droits admin compris — la session de l'admin reste inchangée
     var isAdmin = document.getElementById('new-staff-admin').checked;
-    // Session admin mémorisée : restaurée si l'admin est arrivé par session persistée (pas de mot de passe en mémoire)
-    var adminSession = (await sb.auth.getSession()).data.session;
-    // is_admin toujours false à l'insertion (RLS v42) — appliqué ci-dessous par l'admin reconnecté
-    var newUser = await auth.registerStaff(email, pwd, nom, role, false);
-
-    // Re-connecter l'admin (le signUp a changé la session active)
-    if (_adminCredentials) {
-      await sb.auth.signInWithPassword({ email: _adminCredentials.email, password: _adminCredentials.password });
-    } else if (adminSession) {
-      await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
-    }
-    if (isAdmin) await db.updateProfile(newUser.id, { is_admin: true });
+    await auth.createStaff(email, pwd, nom, role, isAdmin);
 
     // Succès
     successEl.textContent = 'Compte créé ! Identifiant : ' + id;
@@ -3144,12 +3132,6 @@ document.getElementById('btn-save-compte').addEventListener('click', async funct
   } catch(e) {
     errEl.textContent = 'Erreur : ' + e.message;
     errEl.classList.remove('hidden');
-    // Re-connecter l'admin en cas d'erreur aussi
-    if (_adminCredentials) {
-      try { await sb.auth.signInWithPassword({ email: _adminCredentials.email, password: _adminCredentials.password }); } catch(re) {}
-    } else if (adminSession) {
-      try { await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token }); } catch(re) {}
-    }
   }
   this.disabled = false;
   this.textContent = 'Créer le compte';
