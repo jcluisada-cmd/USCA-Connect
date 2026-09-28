@@ -152,7 +152,9 @@ Auto-login 90j, max 5 appareils par soignant.
 - `statut` ouvert/traité
 - `tuteur_reponse`
 
-### `questions_tuteur` — Questions textuelles externe → tuteur (v20)
+### `extern_questions` — Questions textuelles externe → tuteur (v20)
+- `user_id`, `message`, `reponse`, `statut` (`ouvert` par défaut)
+- Réinitialisation complète d'un externe : RPC `reset_externe_data(uuid)` (v42, médecin/admin)
 
 ---
 
@@ -229,6 +231,8 @@ Anti-doublon messages staff.
 | v38 | 2026-05-22 | Dashboard PdS — tables `cushman_scores` (sevrage alcool, items JSONB 7 niveaux + rappel) et `transmissions` (médical/paramédical, RLS par rôle) |
 | v39 | 2026-05-22 | `profiles_select_all` (SELECT `true`) — patient anon lit emails auteurs via JOIN (affichage auteur messages) |
 | v40 | 2026-05-29 | `contenus_partages.modifie_le` + policy `contenus_update_own` + DELETE resserré `contenus_delete_own` (chacun modifie/supprime ses propres messages) |
+| v41 | 2026-09-22 | Purge `cron.job_run_details` + job quotidien + `VACUUM FULL net._http_response` (journaux techniques) |
+| v42 | 2026-09-28 | `profiles` : UPDATE soi-même ou admin + trigger `usca_profiles_protect` (role/is_admin/email réservés admin) + INSERT `profiles_insert_self` ; RPC `reset_externe_data(uuid)` (bouton ↺ Mon externe) |
 
 ---
 

@@ -950,15 +950,15 @@ window.db = {
     return data;
   },
 
-  /** Supprime toutes les sessions, réponses et signalements QCM d'un externe (pour changement d'externe) */
+  /**
+   * Réinitialise un compte externe (changement d'externe) : sessions, réponses,
+   * signalements, questions au tuteur et checklist. RPC SECURITY DEFINER (v42),
+   * réservée médecin/admin — renvoie { sessions, reponses, flags, questions }.
+   */
   async resetExterneData(externeId) {
-    const { data: sessions } = await sb.from('qcm_sessions').select('id').eq('user_id', externeId);
-    if (sessions && sessions.length) {
-      const ids = sessions.map(s => s.id);
-      await sb.from('qcm_reponses').delete().in('session_id', ids);
-    }
-    await sb.from('qcm_sessions').delete().eq('user_id', externeId);
-    await sb.from('qcm_flags').delete().eq('user_id', externeId);
+    const { data, error } = await sb.rpc('reset_externe_data', { p_externe_id: externeId });
+    if (error) throw error;
+    return data;
   },
 
   // ══════════════════════════════════════════════════

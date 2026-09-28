@@ -3121,12 +3121,18 @@ document.getElementById('btn-save-compte').addEventListener('click', async funct
   try {
     // Créer le compte Supabase Auth
     var isAdmin = document.getElementById('new-staff-admin').checked;
-    var newUser = await auth.registerStaff(email, pwd, nom, role, isAdmin);
+    // Session admin mémorisée : restaurée si l'admin est arrivé par session persistée (pas de mot de passe en mémoire)
+    var adminSession = (await sb.auth.getSession()).data.session;
+    // is_admin toujours false à l'insertion (RLS v42) — appliqué ci-dessous par l'admin reconnecté
+    var newUser = await auth.registerStaff(email, pwd, nom, role, false);
 
     // Re-connecter l'admin (le signUp a changé la session active)
     if (_adminCredentials) {
       await sb.auth.signInWithPassword({ email: _adminCredentials.email, password: _adminCredentials.password });
+    } else if (adminSession) {
+      await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
     }
+    if (isAdmin) await db.updateProfile(newUser.id, { is_admin: true });
 
     // Succès
     successEl.textContent = 'Compte créé ! Identifiant : ' + id;
@@ -3141,6 +3147,8 @@ document.getElementById('btn-save-compte').addEventListener('click', async funct
     // Re-connecter l'admin en cas d'erreur aussi
     if (_adminCredentials) {
       try { await sb.auth.signInWithPassword({ email: _adminCredentials.email, password: _adminCredentials.password }); } catch(re) {}
+    } else if (adminSession) {
+      try { await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token }); } catch(re) {}
     }
   }
   this.disabled = false;
@@ -5381,10 +5389,11 @@ function renderExterne(list) {
     btnReset.title = 'Réinitialiser les données QCM (changement d\'externe)';
     btnReset.addEventListener('click', (function(extId, extNom) {
       return async function() {
-        if (!confirm('Supprimer toutes les sessions QCM de ' + (extNom || 'l\'externe') + ' ?\nCette action est irréversible.')) return;
+        if (!confirm('Réinitialiser le compte de ' + (extNom || 'l\'externe') + ' ?\nSessions QCM, réponses, signalements, questions et checklist seront supprimés.\nCette action est irréversible.')) return;
         btnReset.disabled = true;
         try {
-          await db.resetExterneData(extId);
+          var bilan = await db.resetExterneData(extId) || {};
+          alert('Compte réinitialisé : ' + (bilan.sessions || 0) + ' session(s), ' + (bilan.reponses || 0) + ' réponse(s), ' + (bilan.flags || 0) + ' signalement(s), ' + (bilan.questions || 0) + ' question(s) supprimés.');
           await loadEleves();
         } catch(e) { alert('Erreur : ' + e.message); btnReset.disabled = false; }
       };
